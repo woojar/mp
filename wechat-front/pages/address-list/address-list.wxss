@@ -1,0 +1,6 @@
+.address-item { background: #fff; padding: 30rpx; margin: 20rpx; border-radius: 12rpx; }
+.detail { font-size: 28rpx; margin-bottom: 10rpx; }
+.contact { color: #666; font-size: 26rpx; margin-bottom: 20rpx; }
+.actions { display: flex; gap: 20rpx; }
+.actions text { color: #e63946; font-size: 26rpx; }
+.add-btn { position: fixed; bottom: 40rpx; left: 30rpx; right: 30rpx; background: #e63946; color: #fff; text-align: center; padding: 24rpx; border-radius: 8rpx; }

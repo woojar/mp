@@ -1,0 +1,15 @@
+<view class="container">
+  <view class="form-item">
+    <text class="label">Name *</text>
+    <input placeholder="Name" value="{{name}}" bindinput="onNameInput" />
+  </view>
+  <view class="form-item">
+    <text class="label">Phone *</text>
+    <input placeholder="Phone" value="{{phone}}" bindinput="onPhoneInput" type="number" />
+  </view>
+  <view class="form-item">
+    <text class="label">Address *</text>
+    <textarea placeholder="Detailed address" value="{{detail}}" bindinput="onDetailInput" />
+  </view>
+  <view class="save-btn" bindtap="onSave">Save</view>
+</view>

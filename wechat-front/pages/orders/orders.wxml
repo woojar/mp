@@ -1,0 +1,30 @@
+<view class="container">
+  <view class="tabs">
+    <view class="tab {{currentTab === 0 ? 'active' : ''}}" data-tab="0" bindtap="onTabChange">{{t.all}}</view>
+    <view class="tab {{currentTab === 1 ? 'active' : ''}}" data-tab="1" bindtap="onTabChange">{{t.pending}}</view>
+    <view class="tab {{currentTab === 2 ? 'active' : ''}}" data-tab="2" bindtap="onTabChange">{{t.paid}}</view>
+    <view class="tab {{currentTab === 3 ? 'active' : ''}}" data-tab="3" bindtap="onTabChange">{{t.completed}}</view>
+  </view>
+
+  <view class="order-list">
+    <view class="order-card" wx:for="{{orders}}" wx:key="id">
+      <view class="order-header">
+        <text class="order-no">Order #{{item.id}}</text>
+        <text class="order-status {{item.status}}">{{item.status}}</text>
+      </view>
+      <view class="order-items">
+        <view class="order-item" wx:for="{{item.items}}" wx:for-item="goods" wx:key="id">
+          <view class="item-name">{{goods.name}}</view>
+          <view class="item-price">¥{{goods.price}} x {{goods.quantity}}</view>
+        </view>
+      </view>
+      <view class="order-footer">
+        <text class="total-price">{{t.total}}: ¥{{item.totalPrice}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty" wx:if="{{orders.length === 0}}">
+    <text>{{t.noOrders}}</text>
+  </view>
+</view>

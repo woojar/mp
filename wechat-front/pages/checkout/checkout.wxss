@@ -1,0 +1,19 @@
+.address-section { background-color: #fff; padding: 30rpx; margin-bottom: 20rpx; }
+.address-box { min-height: 100rpx; }
+.address-detail { font-size: 28rpx; margin-bottom: 10rpx; }
+.address-contact { color: #666; font-size: 26rpx; }
+.no-address { color: #e63946; font-size: 28rpx; text-align: center; padding: 30rpx; }
+.section { background-color: #fff; padding: 30rpx; }
+.section-title { font-size: 28rpx; font-weight: bold; margin-bottom: 20rpx; }
+.order-item { display: flex; align-items: center; padding: 20rpx 0; border-bottom: 1rpx solid #f5f5f5; }
+.order-item:last-child { border-bottom: none; }
+.item-image { width: 120rpx; height: 120rpx; border-radius: 8rpx; margin-right: 20rpx; }
+.item-info { flex: 1; }
+.item-name { font-size: 28rpx; margin-bottom: 10rpx; }
+.item-price { color: #666; font-size: 26rpx; }
+.spacer { height: 140rpx; }
+.bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 20rpx; padding-bottom: calc(20rpx + env(safe-area-inset-bottom)); box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.1); }
+.total-section { display: flex; align-items: baseline; }
+.total-label { font-size: 28rpx; color: #666; }
+.total-price { color: #e63946; font-size: 40rpx; font-weight: bold; margin-left: 10rpx; }
+.submit-btn { background-color: #e63946; color: #fff; padding: 24rpx 60rpx; border-radius: 8rpx; font-size: 28rpx; }

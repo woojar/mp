@@ -1,0 +1,42 @@
+<view class="container">
+  <view class="cart-list" wx:if="{{cart.length > 0}}">
+    <view class="cart-item" wx:for="{{cart}}" wx:key="id">
+      <view class="checkbox-wrapper" data-id="{{item.id}}" bindtap="onItemToggle">
+        <view class="checkbox {{item.selected ? 'checked' : ''}}">
+          <text wx:if="{{item.selected}}">✓</text>
+        </view>
+      </view>
+      <image class="item-image" src="{{item.image}}" mode="aspectFill" />
+      <view class="item-info">
+        <view class="item-name">{{item.name}}</view>
+        <view class="item-price-row">
+          <text class="item-price">¥{{item.price}}</text>
+        </view>
+        <view class="quantity-control">
+          <view class="qty-btn" data-id="{{item.id}}" data-action="minus" bindtap="onQuantityChange">-</view>
+          <text class="qty-num">{{item.quantity}}</text>
+          <view class="qty-btn" data-id="{{item.id}}" data-action="plus" bindtap="onQuantityChange">+</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-cart" wx:else>
+    <view class="empty-icon">🛒</view>
+    <text class="empty-text">{{t.emptyCart}}</text>
+  </view>
+
+  <view class="bottom-bar" wx:if="{{cart.length > 0}}">
+    <view class="select-all" bindtap="onSelectAll">
+      <view class="checkbox {{selectAll ? 'checked' : ''}}">
+        <text wx:if="{{selectAll}}">✓</text>
+      </view>
+      <text>{{t.all}}</text>
+    </view>
+    <view class="total-section">
+      <text class="total-label">{{t.total}}:</text>
+      <text class="total-price">¥{{totalPrice}}</text>
+      <view class="checkout-btn" bindtap="onCheckout">{{t.checkout}}</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,39 @@
+<view class="container">
+  <view class="search-bar" bindtap="onSearchPage">
+    <view class="search-icon">🔍</view>
+    <input class="search-input" placeholder="{{t.search}}" disabled />
+  </view>
+
+  <view class="category-list">
+    <view class="category-item {{currentCategory === 0 ? 'active' : ''}}" data-id="0" bindtap="onCategoryTap">
+      {{language === 'zh' ? '全部' : 'All'}}
+    </view>
+    <view class="category-item {{currentCategory === 1 ? 'active' : ''}}" data-id="1" bindtap="onCategoryTap">
+      {{language === 'zh' ? '食品' : 'Food'}}
+    </view>
+    <view class="category-item {{currentCategory === 2 ? 'active' : ''}}" data-id="2" bindtap="onCategoryTap">
+      {{language === 'zh' ? '饮料' : 'Drinks'}}
+    </view>
+    <view class="category-item {{currentCategory === 3 ? 'active' : ''}}" data-id="3" bindtap="onCategoryTap">
+      {{language === 'zh' ? '日用品' : 'Daily'}}
+    </view>
+    <view class="category-item {{currentCategory === 4 ? 'active' : ''}}" data-id="4" bindtap="onCategoryTap">
+      {{language === 'zh' ? '零食' : 'Snacks'}}
+    </view>
+  </view>
+
+  <view class="product-grid">
+    <view class="product-card" wx:for="{{products}}" wx:key="id" data-id="{{item.id}}" bindtap="onProductTap">
+      <image class="product-image" src="{{item.image}}" mode="aspectFill" />
+      <view class="product-info">
+        <view class="product-name">{{item.name}}</view>
+        <view class="product-price-row">
+          <text class="product-price">¥{{item.price}}</text>
+          <text class="product-sales">{{t.sold}}: {{item.sales}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="loading" wx:if="{{loading}}">{{t.loading}}</view>
+</view>

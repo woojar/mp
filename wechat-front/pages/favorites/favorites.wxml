@@ -1,0 +1,14 @@
+<view class="container">
+  <view wx:if="{{favorites.length > 0}}">
+    <view class="item" wx:for="{{favorites}}" wx:key="id">
+      <image src="{{item.image}}" mode="aspectFill" />
+      <view class="info">
+        <text class="name">{{item.name}}</text>
+        <text class="price">¥{{item.price}}</text>
+      </view>
+    </view>
+  </view>
+  <view class="empty" wx:else>
+    <text>{{t.emptyFavorites}}</text>
+  </view>
+</view>

@@ -1,0 +1,34 @@
+<view class="container">
+  <view class="address-section">
+    <view wx:if="{{address}}" class="address-box">
+      <view class="address-info">
+        <view class="address-detail">{{address.province}}{{address.city}}{{address.district}}{{address.detail}}</view>
+        <view class="address-contact">{{address.name}} {{address.phone}}</view>
+      </view>
+    </view>
+    <view wx:else class="no-address" bindtap="onChooseAddress">
+      <text>+ {{t.addAddress}}</text>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">Order Items</view>
+    <view class="order-item" wx:for="{{items}}" wx:key="id">
+      <image class="item-image" src="{{item.image}}" mode="aspectFill" />
+      <view class="item-info">
+        <view class="item-name">{{item.name}}</view>
+        <view class="item-price">¥{{item.price}} x {{item.quantity}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="spacer"></view>
+
+  <view class="bottom-bar">
+    <view class="total-section">
+      <text class="total-label">{{t.total}}:</text>
+      <text class="total-price">¥{{totalPrice}}</text>
+    </view>
+    <view class="submit-btn" bindtap="onSubmitOrder">{{t.submitOrder}}</view>
+  </view>
+</view>

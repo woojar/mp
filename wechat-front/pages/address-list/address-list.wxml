@@ -1,0 +1,11 @@
+<view class="container">
+  <view wx:for="{{addresses}}" wx:key="id" class="address-item">
+    <view class="detail">{{item.province}}{{item.city}}{{item.district}}{{item.detail}}</view>
+    <view class="contact">{{item.name}} {{item.phone}}</view>
+    <view class="actions">
+      <text data-id="{{item.id}}" bindtap="onEdit">Edit</text>
+      <text data-id="{{item.id}}" bindtap="onDelete">Delete</text>
+    </view>
+  </view>
+  <view class="add-btn" bindtap="onAddAddress">{{t.addAddress}}</view>
+</view>

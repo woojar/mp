@@ -1,0 +1,18 @@
+<view class="container">
+  <view class="search-bar">
+    <input placeholder="Search products..." value="{{keyword}}" bindinput="onKeywordInput" confirm-type="search" bindconfirm="onSearch" focus />
+    <text bindtap="onCancel">Cancel</text>
+  </view>
+  <view class="results" wx:if="{{products.length > 0}}">
+    <view class="product-card" wx:for="{{products}}" wx:key="id" data-id="{{item.id}}" bindtap="onProductTap">
+      <image src="{{item.image}}" mode="aspectFill" />
+      <view class="info">
+        <text>{{item.name}}</text>
+        <text class="price">¥{{item.price}}</text>
+      </view>
+    </view>
+  </view>
+  <view class="empty" wx:if="{{hasSearched && products.length === 0}}">
+    <text>No results</text>
+  </view>
+</view>

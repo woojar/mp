@@ -1,0 +1,42 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/product/product",
+    "pages/cart/cart",
+    "pages/checkout/checkout",
+    "pages/user/user",
+    "pages/orders/orders",
+    "pages/favorites/favorites",
+    "pages/address-list/address-list",
+    "pages/address-edit/address-edit",
+    "pages/order-detail/order-detail",
+    "pages/search/search"
+  ],
+  "window": {
+    "navigationBarTitleText": "Daily Goods Store",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f5f5f5"
+  },
+  "tabBar": {
+    "color": "#666",
+    "selectedColor": "#e63946",
+    "backgroundColor": "#fff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "Shop"
+      },
+      {
+        "pagePath": "pages/cart/cart",
+        "text": "Cart"
+      },
+      {
+        "pagePath": "pages/user/user",
+        "text": "Me"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

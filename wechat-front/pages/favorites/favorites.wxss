@@ -1,0 +1,6 @@
+.item { display: flex; background: #fff; padding: 20rpx; margin: 20rpx; border-radius: 12rpx; }
+.item image { width: 120rpx; height: 120rpx; margin-right: 20rpx; }
+.info { flex: 1; }
+.name { font-size: 28rpx; display: block; margin-bottom: 10rpx; }
+.price { color: #e63946; font-size: 32rpx; font-weight: bold; }
+.empty { text-align: center; padding: 200rpx; color: #999; }

@@ -1,0 +1,23 @@
+.cart-list { padding: 0 20rpx 140rpx; }
+.cart-item { display: flex; align-items: center; background-color: #fff; padding: 20rpx; margin-bottom: 20rpx; border-radius: 12rpx; }
+.checkbox-wrapper { padding: 20rpx; margin-right: 10rpx; }
+.checkbox { width: 40rpx; height: 40rpx; border: 2rpx solid #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24rpx; color: #fff; }
+.checkbox.checked { background-color: #e63946; border-color: #e63946; }
+.item-image { width: 160rpx; height: 160rpx; margin: 0 20rpx; border-radius: 8rpx; flex-shrink: 0; }
+.item-info { flex: 1; min-width: 0; }
+.item-name { font-size: 28rpx; margin-bottom: 10rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-price-row { display: flex; justify-content: space-between; margin-bottom: 10rpx; }
+.item-price { color: #e63946; font-size: 28rpx; font-weight: bold; }
+.quantity-control { display: flex; align-items: center; }
+.qty-btn { width: 50rpx; height: 50rpx; line-height: 50rpx; text-align: center; background-color: #f5f5f5; border-radius: 4rpx; font-size: 32rpx; }
+.qty-num { padding: 0 20rpx; font-size: 28rpx; }
+.empty-cart { text-align: center; padding: 200rpx 50rpx; color: #999; }
+.empty-icon { font-size: 120rpx; margin-bottom: 30rpx; }
+.empty-text { font-size: 32rpx; display: block; }
+.bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 20rpx; padding-bottom: calc(20rpx + env(safe-area-inset-bottom)); box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.1); }
+.select-all { display: flex; align-items: center; font-size: 28rpx; }
+.select-all .checkbox { margin-right: 10rpx; }
+.total-section { display: flex; align-items: center; }
+.total-label { font-size: 26rpx; color: #999; margin-right: 10rpx; }
+.total-price { color: #e63946; font-size: 36rpx; font-weight: bold; margin-right: 20rpx; }
+.checkout-btn { background-color: #e63946; color: #fff; padding: 24rpx 50rpx; border-radius: 8rpx; font-size: 28rpx; }

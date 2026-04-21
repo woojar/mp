@@ -1,0 +1,33 @@
+<view class="container" wx:if="{{product}}">
+  <swiper class="product-swiper" indicator-dots indicator-color="rgba(255,255,255,0.5)" indicator-active-color="#fff" autoplay circular>
+    <swiper-item>
+      <image src="{{product.image}}" mode="aspectFill" class="swiper-image" />
+    </swiper-item>
+  </swiper>
+
+  <view class="product-detail">
+    <view class="price-row">
+      <text class="price">¥{{product.price}}</text>
+    </view>
+    <view class="product-title">{{product.name}}</view>
+    <view class="stock-row">
+      <text>Stock: {{product.stock}}</text>
+      <text>{{t.sold}}: {{product.sales}}</text>
+    </view>
+  </view>
+
+  <view class="section" wx:if="{{product.description}}">
+    <view class="section-title">Description</view>
+    <view class="description">{{product.description}}</view>
+  </view>
+
+  <view class="bottom-bar">
+    <view class="qty-selector">
+      <view class="qty-btn" bindtap="onQuantityMinus">-</view>
+      <text class="qty-num">{{quantity}}</text>
+      <view class="qty-btn" bindtap="onQuantityPlus">+</view>
+    </view>
+    <view class="add-cart-btn" bindtap="onAddToCart">{{t.addToCart}}</view>
+    <view class="buy-btn" bindtap="onBuyNow">{{t.buyNow}}</view>
+  </view>
+</view>

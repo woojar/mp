@@ -1,0 +1,15 @@
+<view class="container" wx:if="{{order}}">
+  <view class="header">
+    <text>Order #{{order.id}}</text>
+    <text class="status">{{order.status}}</text>
+  </view>
+  <view class="items">
+    <view wx:for="{{order.items}}" wx:key="id">
+      <text>{{item.name}}</text>
+      <text>¥{{item.price}} x {{item.quantity}}</text>
+    </view>
+  </view>
+  <view class="footer">
+    <text>Total: ¥{{order.totalPrice}}</text>
+  </view>
+</view>
