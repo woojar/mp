@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+*.log
+npm-debug.log*
+
+# WeChat backend
+wechat-backend/*.db
+wechat-backend/*.db-*
