@@ -1,13 +1,21 @@
-const Database = require('better-sqlite3');
+const initSqlJs = require('sql.js');
+const fs = require('fs');
 const path = require('path');
 
 const dbPath = path.join(__dirname, 'store.db');
-const db = new Database(dbPath);
+let db;
 
-db.pragma('journal_mode = WAL');
+async function initializeDatabase() {
+  const SQL = await initSqlJs();
+  
+  if (fs.existsSync(dbPath)) {
+    const fileBuffer = fs.readFileSync(dbPath);
+    db = new SQL.Database(fileBuffer);
+  } else {
+    db = new SQL.Database();
+  }
 
-function initializeDatabase() {
-  db.exec(`
+  db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       openid TEXT UNIQUE,
@@ -16,8 +24,10 @@ function initializeDatabase() {
       phone TEXT,
       language TEXT DEFAULT 'en',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name_en TEXT NOT NULL,
@@ -25,8 +35,10 @@ function initializeDatabase() {
       icon TEXT,
       sort_order INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -39,10 +51,11 @@ function initializeDatabase() {
       sales INTEGER DEFAULT 0,
       description TEXT,
       status INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (category_id) REFERENCES categories(id)
-    );
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS addresses (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -53,10 +66,11 @@ function initializeDatabase() {
       district TEXT,
       detail TEXT NOT NULL,
       is_default INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    );
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -71,11 +85,11 @@ function initializeDatabase() {
       address TEXT,
       remark TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id),
-      FOREIGN KEY (address_id) REFERENCES addresses(id)
-    );
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS order_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL,
@@ -85,33 +99,31 @@ function initializeDatabase() {
       price REAL NOT NULL,
       quantity INTEGER NOT NULL,
       subtotal REAL NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-      FOREIGN KEY (product_id) REFERENCES products(id)
-    );
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS cart_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
       product_id INTEGER NOT NULL,
       quantity INTEGER DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id),
-      FOREIGN KEY (product_id) REFERENCES products(id),
-      UNIQUE(user_id, product_id)
-    );
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS favorites (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
       product_id INTEGER NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id),
-      FOREIGN KEY (product_id) REFERENCES products(id),
-      UNIQUE(user_id, product_id)
-    );
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS banners (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT,
@@ -121,59 +133,77 @@ function initializeDatabase() {
       sort_order INTEGER DEFAULT 0,
       status INTEGER DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+    )
   `);
 
   seedData();
+  saveDatabase();
+}
+
+function saveDatabase() {
+  const data = db.export();
+  const buffer = Buffer.from(data);
+  fs.writeFileSync(dbPath, buffer);
 }
 
 function seedData() {
-  const categoryCount = db.prepare('SELECT COUNT(*) as count FROM categories').get();
-  if (categoryCount.count === 0) {
-    const insertCategory = db.prepare('INSERT INTO categories (name_en, name_zh, icon, sort_order) VALUES (?, ?, ?, ?)');
-    insertCategory.run('Food', '食品', 'food', 1);
-    insertCategory.run('Drinks', '饮料', 'drinks', 2);
-    insertCategory.run('Daily Use', '日用品', 'daily', 3);
-    insertCategory.run('Snacks', '零食', 'snacks', 4);
+  const cats = db.exec('SELECT COUNT(*) as count FROM categories');
+  if (cats[0] && cats[0].values[0][0] === 0) {
+    db.run("INSERT INTO categories (name_en, name_zh, icon, sort_order) VALUES ('Food', '食品', 'food', 1)");
+    db.run("INSERT INTO categories (name_en, name_zh, icon, sort_order) VALUES ('Drinks', '饮料', 'drinks', 2)");
+    db.run("INSERT INTO categories (name_en, name_zh, icon, sort_order) VALUES ('Daily Use', '日用品', 'daily', 3)");
+    db.run("INSERT INTO categories (name_en, name_zh, icon, sort_order) VALUES ('Snacks', '零食', 'snacks', 4)");
   }
 
-  const productCount = db.prepare('SELECT COUNT(*) as count FROM products').get();
-  if (productCount.count === 0) {
-    const insertProduct = db.prepare('INSERT INTO products (name, price, original_price, image, images, category_id, stock, sales, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    
+  const prods = db.exec('SELECT COUNT(*) as count FROM products');
+  if (prods[0] && prods[0].values[0][0] === 0) {
     const defaultImages = JSON.stringify(['https://via.placeholder.com/400', 'https://via.placeholder.com/400']);
-    
-    insertProduct.run('Instant Noodles', 5.5, 8.0, 'https://via.placeholder.com/200', defaultImages, 1, 100, 1000, 'Delicious instant noodles with rich flavor');
-    insertProduct.run('Mineral Water', 2.0, 2.5, 'https://via.placeholder.com/200', defaultImages, 2, 500, 5000, 'Fresh mineral water from mountain springs');
-    insertProduct.run('Tissue Box', 10.0, 15.0, 'https://via.placeholder.com/200', defaultImages, 3, 80, 800, 'Soft 3-ply tissue box');
-    insertProduct.run('Toothbrush', 5.0, 8.0, 'https://via.placeholder.com/200', defaultImages, 3, 50, 300, 'Quality toothbrush with soft bristles');
-    insertProduct.run('Cookies', 8.0, 12.0, 'https://via.placeholder.com/200', defaultImages, 4, 120, 2000, 'Crunchy cookies with chocolate chips');
-    insertProduct.run('Chips', 6.0, 10.0, 'https://via.placeholder.com/200', defaultImages, 4, 150, 3500, 'Crispy potato chips');
-    insertProduct.run('Orange Juice', 4.5, 6.0, 'https://via.placeholder.com/200', defaultImages, 2, 80, 1200, 'Freshly squeezed orange juice');
-    insertProduct.run('Shampoo', 25.0, 35.0, 'https://via.placeholder.com/200', defaultImages, 3, 40, 600, 'Gentle shampoo for all hair types');
-    insertProduct.run('Soap', 3.0, 5.0, 'https://via.placeholder.com/200', defaultImages, 3, 100, 800, 'Natural soap with moisturizing formula');
-    insertProduct.run('Candy', 2.0, 3.0, 'https://via.placeholder.com/200', defaultImages, 4, 200, 3000, 'Sweet candy for everyone');
+    db.run("INSERT INTO products (name, price, original_price, image, images, category_id, stock, sales, description) VALUES ('Instant Noodles', 5.5, 8.0, 'https://via.placeholder.com/200', ?, 1, 100, 1000, 'Delicious instant noodles')", [defaultImages]);
+    db.run("INSERT INTO products (name, price, original_price, image, images, category_id, stock, sales, description) VALUES ('Mineral Water', 2.0, 2.5, 'https://via.placeholder.com/200', ?, 2, 500, 5000, 'Fresh mineral water')", [defaultImages]);
+    db.run("INSERT INTO products (name, price, original_price, image, images, category_id, stock, sales, description) VALUES ('Tissue Box', 10.0, 15.0, 'https://via.placeholder.com/200', ?, 3, 80, 800, 'Soft 3-ply tissue')", [defaultImages]);
+    db.run("INSERT INTO products (name, price, original_price, image, images, category_id, stock, sales, description) VALUES ('Toothbrush', 5.0, 8.0, 'https://via.placeholder.com/200', ?, 3, 50, 300, 'Quality toothbrush')", [defaultImages]);
+    db.run("INSERT INTO products (name, price, original_price, image, images, category_id, stock, sales, description) VALUES ('Cookies', 8.0, 12.0, 'https://via.placeholder.com/200', ?, 4, 120, 2000, 'Crunchy cookies')", [defaultImages]);
+    db.run("INSERT INTO products (name, price, original_price, image, images, category_id, stock, sales, description) VALUES ('Chips', 6.0, 10.0, 'https://via.placeholder.com/200', ?, 4, 150, 3500, 'Crispy potato chips')", [defaultImages]);
   }
 
-  const bannerCount = db.prepare('SELECT COUNT(*) as count FROM banners').get();
-  if (bannerCount.count === 0) {
-    const insertBanner = db.prepare('INSERT INTO banners (title, image, link_type, link_value, sort_order, status) VALUES (?, ?, ?, ?, ?, ?)');
-    insertBanner.run('Summer Sale', 'https://via.placeholder.com/750x300', 'category', '1', 1, 1);
-    insertBanner.run('New Arrivals', 'https://via.placeholder.com/750x300', 'category', '2', 2, 1);
-    insertBanner.run('Hot Products', 'https://via.placeholder.com/750x300', 'category', '3', 3, 1);
+  const banners = db.exec('SELECT COUNT(*) as count FROM banners');
+  if (banners[0] && banners[0].values[0][0] === 0) {
+    db.run("INSERT INTO banners (title, image, link_type, link_value, sort_order, status) VALUES ('Summer Sale', 'https://via.placeholder.com/750x300', 'category', '1', 1, 1)");
+    db.run("INSERT INTO banners (title, image, link_type, link_value, sort_order, status) VALUES ('New Arrivals', 'https://via.placeholder.com/750x300', 'category', '2', 2, 1)");
   }
+}
+
+function exec(sql, params = []) {
+  const stmt = db.prepare(sql);
+  if (params.length > 0) stmt.bind(params);
+  const results = [];
+  while (stmt.step()) {
+    results.push(stmt.getAsObject());
+  }
+  stmt.free();
+  return results;
+}
+
+function execOne(sql, params = []) {
+  const results = exec(sql, params);
+  return results.length > 0 ? results[0] : null;
+}
+
+function run(sql, params = []) {
+  db.run(sql, params);
+  saveDatabase();
+  return { lastInsertRowid: db.exec('SELECT last_insert_rowid()')[0].values[0][0] };
 }
 
 const userOps = {
   findByOpenid(openid) {
-    return db.prepare('SELECT * FROM users WHERE openid = ?').get(openid);
+    return execOne('SELECT * FROM users WHERE openid = ?', [openid]);
   },
   findById(id) {
-    return db.prepare('SELECT id, openid, nickname, avatar, phone, language, created_at FROM users WHERE id = ?').get(id);
+    return execOne('SELECT id, openid, nickname, avatar, phone, language, created_at FROM users WHERE id = ?', [id]);
   },
   create(openid, userInfo = {}) {
-    const stmt = db.prepare('INSERT INTO users (openid, nickname, avatar, phone) VALUES (?, ?, ?, ?)');
-    const result = stmt.run(openid, userInfo.nickname || '', userInfo.avatar || '', userInfo.phone || '');
+    const result = run('INSERT INTO users (openid, nickname, avatar, phone) VALUES (?, ?, ?, ?)', [openid, userInfo.nickname || '', userInfo.avatar || '', userInfo.phone || '']);
     return this.findById(result.lastInsertRowid);
   },
   update(id, data) {
@@ -183,27 +213,33 @@ const userOps = {
     if (data.avatar !== undefined) { fields.push('avatar = ?'); values.push(data.avatar); }
     if (data.phone !== undefined) { fields.push('phone = ?'); values.push(data.phone); }
     if (data.language !== undefined) { fields.push('language = ?'); values.push(data.language); }
-    if (fields.length === 0) return this.findById(id);
-    values.push(id);
-    db.prepare(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+    if (fields.length > 0) {
+      values.push(id);
+      run(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
+    }
     return this.findById(id);
   }
 };
 
 const categoryOps = {
   findAll() {
-    return db.prepare('SELECT * FROM categories ORDER BY sort_order').all();
+    return exec('SELECT * FROM categories ORDER BY sort_order');
   },
   findById(id) {
-    return db.prepare('SELECT * FROM categories WHERE id = ?').get(id);
+    return execOne('SELECT * FROM categories WHERE id = ?', [id]);
   }
 };
 
 const productOps = {
   findAll({ page = 1, limit = 20, category, keyword, status = 1 } = {}) {
     const offset = (page - 1) * limit;
-    let sql = 'SELECT p.*, c.name_en as category_name_en, c.name_zh as category_name_zh FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.status = ?';
-    const params = [status];
+    let sql = 'SELECT p.*, c.name_en as category_name_en, c.name_zh as category_name_zh FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1';
+    const params = [];
+    
+    if (status !== undefined) {
+      sql += ' AND p.status = ?';
+      params.push(status);
+    }
     
     if (category && category !== '0') {
       sql += ' AND p.category_id = ?';
@@ -218,46 +254,39 @@ const productOps = {
     sql += ' ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
     
-    const products = db.prepare(sql).all(...params);
+    const products = exec(sql, params);
     
-    const countSql = 'SELECT COUNT(*) as total FROM products WHERE status = ?' + 
-      (category && category !== '0' ? ' AND category_id = ?' : '') +
-      (keyword ? ' AND (name LIKE ? OR description LIKE ?)' : '');
+    const countSql = 'SELECT COUNT(*) as total FROM products WHERE status = ?';
+    const { total } = execOne(countSql, [status]);
     
-    const countParams = [status];
-    if (category && category !== '0') countParams.push(parseInt(category));
-    if (keyword) countParams.push(`%${keyword}%`, `%${keyword}%`);
-    
-    const { total } = db.prepare(countSql).get(...countParams);
-    
-    return { products, total, page, limit };
+    return { products, total: total || 0, page, limit };
   },
   findById(id) {
-    return db.prepare('SELECT p.*, c.name_en as category_name_en, c.name_zh as category_name_zh FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = ?').get(id);
+    return execOne('SELECT p.*, c.name_en as category_name_en, c.name_zh as category_name_zh FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = ?', [id]);
   },
   updateStock(id, quantity) {
-    return db.prepare('UPDATE products SET stock = stock - ?, sales = sales + ? WHERE id = ?').run(quantity, quantity, id);
+    run('UPDATE products SET stock = stock - ?, sales = sales + ? WHERE id = ?', [quantity, quantity, id]);
   }
 };
 
 const addressOps = {
   findByUser(userId) {
-    return db.prepare('SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC').all(userId);
+    return exec('SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC', [userId]);
   },
   findById(id) {
-    return db.prepare('SELECT * FROM addresses WHERE id = ?').get(id);
+    return execOne('SELECT * FROM addresses WHERE id = ?', [id]);
   },
   create(userId, data) {
     if (data.is_default) {
-      db.prepare('UPDATE addresses SET is_default = 0 WHERE user_id = ?').run(userId);
+      run('UPDATE addresses SET is_default = 0 WHERE user_id = ?', [userId]);
     }
-    const stmt = db.prepare('INSERT INTO addresses (user_id, name, phone, province, city, district, detail, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-    const result = stmt.run(userId, data.name, data.phone, data.province || '', data.city || '', data.district || '', data.detail, data.is_default ? 1 : 0);
+    const result = run('INSERT INTO addresses (user_id, name, phone, province, city, district, detail, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
+      [userId, data.name, data.phone, data.province || '', data.city || '', data.district || '', data.detail, data.is_default ? 1 : 0]);
     return this.findById(result.lastInsertRowid);
   },
   update(id, userId, data) {
     if (data.is_default) {
-      db.prepare('UPDATE addresses SET is_default = 0 WHERE user_id = ?').run(userId);
+      run('UPDATE addresses SET is_default = 0 WHERE user_id = ?', [userId]);
     }
     const fields = [];
     const values = [];
@@ -268,44 +297,46 @@ const addressOps = {
     if (data.district !== undefined) { fields.push('district = ?'); values.push(data.district); }
     if (data.detail !== undefined) { fields.push('detail = ?'); values.push(data.detail); }
     if (data.is_default !== undefined) { fields.push('is_default = ?'); values.push(data.is_default ? 1 : 0); }
-    values.push(id, userId);
-    db.prepare(`UPDATE addresses SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`).run(...values);
+    if (fields.length > 0) {
+      values.push(id, userId);
+      run(`UPDATE addresses SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`, values);
+    }
     return this.findById(id);
   },
   delete(id, userId) {
-    return db.prepare('DELETE FROM addresses WHERE id = ? AND user_id = ?').run(id, userId);
+    run('DELETE FROM addresses WHERE id = ? AND user_id = ?', [id, userId]);
   }
 };
 
 const cartOps = {
   findByUser(userId) {
-    return db.prepare(`
+    return exec(`
       SELECT ci.*, p.name, p.price, p.image, p.stock 
       FROM cart_items ci 
       JOIN products p ON ci.product_id = p.id 
       WHERE ci.user_id = ?
-    `).all(userId);
+    `, [userId]);
   },
   add(userId, productId, quantity = 1) {
-    const existing = db.prepare('SELECT * FROM cart_items WHERE user_id = ? AND product_id = ?').get(userId, productId);
+    const existing = execOne('SELECT * FROM cart_items WHERE user_id = ? AND product_id = ?', [userId, productId]);
     if (existing) {
-      db.prepare('UPDATE cart_items SET quantity = quantity + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(quantity, existing.id);
+      run('UPDATE cart_items SET quantity = quantity + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [quantity, existing.id]);
       return existing.id;
     }
-    const result = db.prepare('INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?)').run(userId, productId, quantity);
+    const result = run('INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?)', [userId, productId, quantity]);
     return result.lastInsertRowid;
   },
   update(id, userId, quantity) {
     if (quantity <= 0) {
-      return db.prepare('DELETE FROM cart_items WHERE id = ? AND user_id = ?').run(id, userId);
+      return run('DELETE FROM cart_items WHERE id = ? AND user_id = ?', [id, userId]);
     }
-    return db.prepare('UPDATE cart_items SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?').run(quantity, id, userId);
+    return run('UPDATE cart_items SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?', [quantity, id, userId]);
   },
   remove(id, userId) {
-    return db.prepare('DELETE FROM cart_items WHERE id = ? AND user_id = ?').run(id, userId);
+    return run('DELETE FROM cart_items WHERE id = ? AND user_id = ?', [id, userId]);
   },
   clear(userId) {
-    return db.prepare('DELETE FROM cart_items WHERE user_id = ?').run(userId);
+    return run('DELETE FROM cart_items WHERE user_id = ?', [userId]);
   }
 };
 
@@ -313,12 +344,10 @@ const orderOps = {
   create(userId, orderData) {
     const orderNo = 'ORD' + Date.now() + Math.random().toString(36).substr(2, 6).toUpperCase();
     
-    const insertOrder = db.prepare(`
+    const result = run(`
       INSERT INTO orders (user_id, order_no, total_price, discount_price, actual_price, status, address_id, address, remark)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    const result = insertOrder.run(
+    `, [
       userId,
       orderNo,
       orderData.totalPrice,
@@ -328,17 +357,15 @@ const orderOps = {
       orderData.addressId || null,
       orderData.address || '',
       orderData.remark || ''
-    );
+    ]);
     
     const orderId = result.lastInsertRowid;
     
-    const insertItem = db.prepare(`
-      INSERT INTO order_items (order_id, product_id, product_name, product_image, price, quantity, subtotal)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    
     for (const item of orderData.items) {
-      insertItem.run(orderId, item.productId, item.name, item.image, item.price, item.quantity, item.price * item.quantity);
+      run(`
+        INSERT INTO order_items (order_id, product_id, product_name, product_image, price, quantity, subtotal)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, [orderId, item.productId, item.name, item.image, item.price, item.quantity, item.price * item.quantity]);
       productOps.updateStock(item.productId, item.quantity);
     }
     
@@ -346,7 +373,7 @@ const orderOps = {
       cartOps.clear(userId);
     }
     
-    return this.findById(orderId);
+    return this.findById(orderId, userId);
   },
   
   findByUser(userId, { page = 1, limit = 10, status } = {}) {
@@ -362,75 +389,67 @@ const orderOps = {
     sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
     
-    const orders = db.prepare(sql).all(...params);
+    const orders = exec(sql, params);
     
-    const countSql = 'SELECT COUNT(*) as total FROM orders WHERE user_id = ?' + 
-      (status && status !== 'all' ? ' AND status = ?' : '');
-    const countParams = [userId];
-    if (status && status !== 'all') countParams.push(status);
-    const { total } = db.prepare(countSql).get(...countParams);
+    const countSql = 'SELECT COUNT(*) as total FROM orders WHERE user_id = ?';
+    const { total } = execOne(countSql, [userId]);
     
-    return { orders, total, page, limit };
+    return { orders, total: total || 0, page, limit };
   },
   
   findById(orderId, userId) {
-    const order = db.prepare('SELECT * FROM orders WHERE id = ? AND user_id = ?').get(orderId, userId);
+    const order = execOne('SELECT * FROM orders WHERE id = ? AND user_id = ?', [orderId, userId]);
     if (order) {
-      order.items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(orderId);
+      order.items = exec('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
     }
     return order;
   },
   
   updateStatus(id, userId, status) {
-    const updateData = { status };
+    const fields = ['status = ?', 'updated_at = CURRENT_TIMESTAMP'];
+    const params = [status];
     if (status === 'paid') {
-      updateData.pay_time = new Date().toISOString();
+      fields.push('pay_time = CURRENT_TIMESTAMP');
     }
-    const fields = [];
-    const values = [];
-    Object.keys(updateData).forEach(key => {
-      fields.push(`${key} = ?`);
-      values.push(updateData[key]);
-    });
-    values.push(id, userId);
-    return db.prepare(`UPDATE orders SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?`).run(...values);
+    params.push(id, userId);
+    run(`UPDATE orders SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`, params);
   }
 };
 
 const favoriteOps = {
   findByUser(userId) {
-    return db.prepare(`
+    return exec(`
       SELECT f.*, p.name, p.price, p.image, p.stock, p.sales
       FROM favorites f
       JOIN products p ON f.product_id = p.id
       WHERE f.user_id = ?
-    `).all(userId);
+    `, [userId]);
   },
   add(userId, productId) {
     try {
-      const result = db.prepare('INSERT INTO favorites (user_id, product_id) VALUES (?, ?)').run(userId, productId);
+      const result = run('INSERT INTO favorites (user_id, product_id) VALUES (?, ?)', [userId, productId]);
       return result.lastInsertRowid;
     } catch (e) {
       return null;
     }
   },
   remove(userId, productId) {
-    return db.prepare('DELETE FROM favorites WHERE user_id = ? AND product_id = ?').run(userId, productId);
+    return run('DELETE FROM favorites WHERE user_id = ? AND product_id = ?', [userId, productId]);
   },
   check(userId, productId) {
-    return db.prepare('SELECT * FROM favorites WHERE user_id = ? AND product_id = ?').get(userId, productId);
+    return execOne('SELECT * FROM favorites WHERE user_id = ? AND product_id = ?', [userId, productId]);
   }
 };
 
 const bannerOps = {
   findActive() {
-    return db.prepare('SELECT * FROM banners WHERE status = 1 ORDER BY sort_order').all();
+    return exec('SELECT * FROM banners WHERE status = 1 ORDER BY sort_order');
   }
 };
 
 module.exports = {
-  db,
   initializeDatabase,
+  db,
   userOps,
   categoryOps,
   productOps,
