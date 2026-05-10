@@ -15,7 +15,7 @@ function adminRouter(app, database, authenticate, {
   adminBannerOps,
   adminOrderOps,
   adminProductOps
-}) {
+}, upload) {
   function exec(sql, params = []) {
     const stmt = database.prepare(sql);
     if (params.length > 0) stmt.bind(params);
@@ -62,6 +62,14 @@ function adminRouter(app, database, authenticate, {
 
   app.post('/api/admin/logout', adminAuth, (req, res) => {
     res.json({ code: 0, message: 'Logged out' });
+  });
+
+  app.post('/api/admin/upload', adminAuth, upload.single('image'), (req, res) => {
+    if (!req.file) {
+      return res.json({ code: 400, message: 'No file uploaded' });
+    }
+    const imageUrl = '/uploads/' + req.file.filename;
+    res.json({ code: 0, data: { url: imageUrl, filename: req.file.filename } });
   });
 
   app.get('/api/admin/categories', adminAuth, (req, res) => {
@@ -553,8 +561,13 @@ function adminRouter(app, database, authenticate, {
           </div>
         </div>
         <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Upload Image</label>
+          <input id="product-image-upload" type="file" accept="image/*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
+          <p id="upload-status" class="text-sm text-gray-500 mt-1"></p>
+        </div>
+        <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-          <input id="product-image" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
+          <input id="product-image" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" placeholder="Or enter image URL">
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
@@ -1015,7 +1028,37 @@ let editingProductId = null;
       modal.classList.add('flex');
     }
 
+    async function uploadImage(file) {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      document.getElementById('upload-status').textContent = 'Uploading...';
+      
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') },
+        body: formData
+      });
+      
+      const result = await res.json();
+      
+      if (result.code === 0) {
+        document.getElementById('upload-status').textContent = 'Upload successful!';
+        document.getElementById('product-image').value = result.data.url;
+        return result.data.url;
+      } else {
+        document.getElementById('upload-status').textContent = 'Upload failed: ' + result.message;
+        return null;
+      }
+    }
+
     async function saveProduct() {
+      const uploadInput = document.getElementById('product-image-upload');
+      if (uploadInput.files.length > 0) {
+        const imageUrl = await uploadImage(uploadInput.files[0]);
+        if (!imageUrl) return;
+      }
+      
       const data = {
         name: document.getElementById('product-name').value,
         price: parseFloat(document.getElementById('product-price').value),

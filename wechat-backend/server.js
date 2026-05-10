@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
 const {
@@ -28,6 +30,32 @@ const JWT_SECRET = process.env.JWT_SECRET || 'wechat-store-secret-key-2024';
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, 'uploads'));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
 
 function generateToken(user) {
   return jwt.sign({ id: user.id, openid: user.openid }, JWT_SECRET, { expiresIn: '30d' });
@@ -402,7 +430,7 @@ async function startServer() {
     adminBannerOps,
     adminOrderOps,
     adminProductOps
-  });
+  }, upload);
 
   app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
