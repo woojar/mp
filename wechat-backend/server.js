@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const {
   initializeDatabase,
+  db,
   userOps,
   categoryOps,
   productOps,
@@ -13,7 +14,12 @@ const {
   cartOps,
   orderOps,
   favoriteOps,
-  bannerOps
+  bannerOps,
+  adminOps,
+  adminCategoryOps,
+  adminBannerOps,
+  adminOrderOps,
+  adminProductOps
 } = require('./database');
 
 const app = express();
@@ -384,13 +390,18 @@ async function startServer() {
     res.json(success(null, 'Order confirmed'));
   });
 
-  adminRouter(app, null, authenticate, {
+  adminRouter(app, db, authenticate, {
     categoryOps,
     productOps,
     addressOps,
     orderOps,
     favoriteOps,
-    bannerOps
+    bannerOps,
+    adminOps,
+    adminCategoryOps,
+    adminBannerOps,
+    adminOrderOps,
+    adminProductOps
   });
 
   app.listen(PORT, () => {

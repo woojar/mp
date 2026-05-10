@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "test": "jest"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
@@ -16,5 +17,9 @@
     "jsonwebtoken": "^9.0.2",
     "sql.js": "^1.14.1",
     "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.2.2"
   }
 }

@@ -136,6 +136,16 @@ async function initializeDatabase() {
     )
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS admins (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      name TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   seedData();
   saveDatabase();
 }
@@ -170,6 +180,11 @@ function seedData() {
   if (banners[0] && banners[0].values[0][0] === 0) {
     db.run("INSERT INTO banners (title, image, link_type, link_value, sort_order, status) VALUES ('Summer Sale', 'https://via.placeholder.com/750x300', 'category', '1', 1, 1)");
     db.run("INSERT INTO banners (title, image, link_type, link_value, sort_order, status) VALUES ('New Arrivals', 'https://via.placeholder.com/750x300', 'category', '2', 2, 1)");
+  }
+
+  const admins = db.exec('SELECT COUNT(*) as count FROM admins');
+  if (admins[0] && admins[0].values[0][0] === 0) {
+    db.run("INSERT INTO admins (username, password, name) VALUES ('admin', 'admin123', 'Administrator')");
   }
 }
 
@@ -447,6 +462,131 @@ const bannerOps = {
   }
 };
 
+const adminOps = {
+  findByUsername(username, password) {
+    return execOne('SELECT * FROM admins WHERE username = ? AND password = ?', [username, password]);
+  }
+};
+
+const adminCategoryOps = {
+  create(name_en, name_zh, icon = '') {
+    const result = run('INSERT INTO categories (name_en, name_zh, icon) VALUES (?, ?, ?)', [name_en, name_zh, icon]);
+    return { id: result.lastInsertRowid };
+  },
+  update(id, data) {
+    const fields = [];
+    const values = [];
+    if (data.name_en) { fields.push('name_en = ?'); values.push(data.name_en); }
+    if (data.name_zh) { fields.push('name_zh = ?'); values.push(data.name_zh); }
+    if (data.icon !== undefined) { fields.push('icon = ?'); values.push(data.icon); }
+    if (fields.length > 0) {
+      values.push(id);
+      run(`UPDATE categories SET ${fields.join(', ')} WHERE id = ?`, values);
+    }
+    return true;
+  },
+  delete(id) {
+    run('DELETE FROM categories WHERE id = ?', [id]);
+    return true;
+  }
+};
+
+const adminBannerOps = {
+  create(data) {
+    const result = run(
+      'INSERT INTO banners (title, image, link_type, link_value, sort_order, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [data.title || '', data.image, data.link_type || '', data.link_value || '', data.sort_order || 0, data.status || 1]
+    );
+    return { id: result.lastInsertRowid };
+  },
+  update(id, data) {
+    const fields = [];
+    const values = [];
+    if (data.title !== undefined) { fields.push('title = ?'); values.push(data.title); }
+    if (data.image !== undefined) { fields.push('image = ?'); values.push(data.image); }
+    if (data.link_type !== undefined) { fields.push('link_type = ?'); values.push(data.link_type); }
+    if (data.link_value !== undefined) { fields.push('link_value = ?'); values.push(data.link_value); }
+    if (data.sort_order !== undefined) { fields.push('sort_order = ?'); values.push(data.sort_order); }
+    if (data.status !== undefined) { fields.push('status = ?'); values.push(data.status); }
+    if (fields.length > 0) {
+      values.push(id);
+      run(`UPDATE banners SET ${fields.join(', ')} WHERE id = ?`, values);
+    }
+    return true;
+  },
+  delete(id) {
+    run('DELETE FROM banners WHERE id = ?', [id]);
+    return true;
+  }
+};
+
+const adminOrderOps = {
+  findAll({ page = 1, limit = 20, status } = {}) {
+    const offset = (page - 1) * limit;
+    let sql = 'SELECT * FROM orders';
+    const params = [];
+    if (status && status !== 'all') {
+      sql += ' WHERE status = ?';
+      params.push(status);
+    }
+    sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+    const orders = exec(sql, params);
+    const total = execOne('SELECT COUNT(*) as count FROM orders' + (status && status !== 'all' ? ' WHERE status = ?' : ''), 
+      status && status !== 'all' ? [status] : [])?.count || 0;
+    return { orders, total, page, limit };
+  },
+  findById(id) {
+    const order = execOne('SELECT * FROM orders WHERE id = ?', [id]);
+    if (order) {
+      order.items = exec('SELECT * FROM order_items WHERE order_id = ?', [id]);
+    }
+    return order;
+  },
+  updateStatus(id, status) {
+    const fields = ['status = ?', 'updated_at = CURRENT_TIMESTAMP'];
+    const params = [status];
+    if (status === 'paid') {
+      fields.push('pay_time = CURRENT_TIMESTAMP');
+    }
+    params.push(id);
+    run(`UPDATE orders SET ${fields.join(', ')} WHERE id = ?`, params);
+    return true;
+  }
+};
+
+const adminProductOps = {
+  create(data) {
+    const result = run(
+      'INSERT INTO products (name, price, original_price, image, images, category_id, stock, description, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [data.name, data.price, data.original_price || null, data.image || '', JSON.stringify(data.images || []), data.category_id || null, data.stock || 0, data.description || '', data.status !== undefined ? data.status : 1]
+    );
+    return { id: result.lastInsertRowid };
+  },
+  update(id, data) {
+    const fields = [];
+    const values = [];
+    if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
+    if (data.price !== undefined) { fields.push('price = ?'); values.push(data.price); }
+    if (data.original_price !== undefined) { fields.push('original_price = ?'); values.push(data.original_price); }
+    if (data.image !== undefined) { fields.push('image = ?'); values.push(data.image); }
+    if (data.images !== undefined) { fields.push('images = ?'); values.push(JSON.stringify(data.images)); }
+    if (data.category_id !== undefined) { fields.push('category_id = ?'); values.push(data.category_id); }
+    if (data.stock !== undefined) { fields.push('stock = ?'); values.push(data.stock); }
+    if (data.description !== undefined) { fields.push('description = ?'); values.push(data.description); }
+    if (data.status !== undefined) { fields.push('status = ?'); values.push(data.status); }
+    if (fields.length > 0) {
+      values.push(id);
+      run(`UPDATE products SET ${fields.join(', ')} WHERE id = ?`, values);
+    }
+    return true;
+  },
+  delete(id) {
+    run('DELETE FROM products WHERE id = ?', [id]);
+    return true;
+  }
+};
+
 module.exports = {
   initializeDatabase,
   db,
@@ -457,5 +597,10 @@ module.exports = {
   cartOps,
   orderOps,
   favoriteOps,
-  bannerOps
+  bannerOps,
+  adminOps,
+  adminCategoryOps,
+  adminBannerOps,
+  adminOrderOps,
+  adminProductOps
 };
