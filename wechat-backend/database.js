@@ -589,7 +589,7 @@ const adminProductOps = {
 
 module.exports = {
   initializeDatabase,
-  db,
+  getDb: () => db,
   userOps,
   categoryOps,
   productOps,

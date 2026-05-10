@@ -1,7 +1,7 @@
 const path = require('path');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'admin-secret-key-2024';
+const JWT_SECRET = process.env.JWT_SECRET || 'wechat-store-secret-key-2024';
 
 function adminRouter(app, database, authenticate, {
   categoryOps,
@@ -206,301 +206,543 @@ function adminRouter(app, database, authenticate, {
   });
 
   app.get('/admin', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
-<html>
+  res.send(`<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel - Daily Goods Store</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; }
-    .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .login-box { background: #fff; padding: 60rpx; border-radius: 16rpx; width: 90%; max-width: 400rpx; box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1); }
-    .login-title { font-size: 40rpx; font-weight: bold; text-align: center; margin-bottom: 40rpx; color: #e63946; }
-    .input { width: 100%; padding: 24rpx; border: 1rpx solid #ddd; border-radius: 8rpx; font-size: 28rpx; margin-bottom: 24rpx; }
-    .btn { background: #e63946; color: #fff; padding: 24rpx; border: none; border-radius: 8rpx; cursor: pointer; font-size: 28rpx; width: 100%; }
-    .btn:hover { background: #d32f3d; }
-    .admin-page { display: none; }
-    .header { background: #e63946; color: #fff; padding: 30rpx 40rpx; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-    .header h1 { font-size: 32rpx; }
-    .logout-btn { color: #fff; cursor: pointer; }
-    .nav { display: flex; background: #fff; overflow-x: auto; border-bottom: 1rpx solid #eee; }
-    .nav-item { padding: 24rpx 32rpx; cursor: pointer; border-bottom: 4rpx solid transparent; white-space: nowrap; }
-    .nav-item.active { border-color: #e63946; color: #e63946; }
-    .content { padding: 30rpx; }
-    .card { background: #fff; border-radius: 12rpx; padding: 30rpx; margin-bottom: 30rpx; }
-    .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20rpx; }
-    .stat-box { text-align: center; padding: 30rpx; background: linear-gradient(135deg, #e63946 0%, #ff6b6b 100%); border-radius: 12rpx; color: #fff; }
-    .stat-box.orange { background: linear-gradient(135deg, #ffa500 0%, #ffb74d 100%); }
-    .stat-box.blue { background: linear-gradient(135deg, #2196f3 0%, #64b5f6 100%); }
-    .stat-box.purple { background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%); }
-    .stat-value { font-size: 48rpx; font-weight: bold; }
-    .stat-label { font-size: 24rpx; opacity: 0.9; margin-top: 8rpx; }
-    .chart-container { height: 300rpx; }
-    .toolbar { display: flex; gap: 20rpx; margin-bottom: 20rpx; flex-wrap: wrap; }
-    .toolbar .input { flex: 1; min-width: 200rpx; margin-bottom: 0; }
-    .toolbar select { padding: 24rpx; border: 1rpx solid #ddd; border-radius: 8rpx; font-size: 28rpx; }
-    .btn-sm { padding: 16rpx 24rpx; font-size: 24rpx; }
-    .btn-secondary { background: #fff; border: 1rpx solid #e63946; color: #e63946; }
-    .btn-secondary:hover { background: #ffebee; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 20rpx; text-align: left; border-bottom: 1rpx solid #eee; font-size: 26rpx; }
-    th { color: #666; font-weight: 500; background: #fafafa; }
-    .product-img { width: 80rpx; height: 80rpx; object-fit: cover; border-radius: 8rpx; }
-    .status-badge { display: inline-block; padding: 6rpx 16rpx; border-radius: 20rpx; font-size: 22rpx; color: #fff; }
-    .actions { display: flex; gap: 16rpx; }
-    .action-link { cursor: pointer; color: #e63946; font-size: 24rpx; }
-    .action-link.delete { color: #999; }
-    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 200; }
-    .modal.show { display: flex; }
-    .modal-content { background: #fff; border-radius: 12rpx; padding: 40rpx; width: 90%; max-width: 600rpx; max-height: 85vh; overflow-y: auto; }
-    .modal-header { display: flex; justify-content: space-between; margin-bottom: 30rpx; }
-    .modal-title { font-size: 32rpx; font-weight: bold; }
-    .close { font-size: 48rpx; cursor: pointer; color: #999; }
-    .form { display: flex; flex-direction: column; gap: 20rpx; }
-    .form-item { display: flex; align-items: flex-start; gap: 20rpx; }
-    .form-item label { width: 140rpx; color: #666; padding-top: 24rpx; font-size: 26rpx; }
-    .form-item input, .form-item textarea, .form-item select { flex: 1; padding: 20rpx; border: 1rpx solid #ddd; border-radius: 8rpx; font-size: 28rpx; }
-    .form-item textarea { min-height: 150rpx; }
-    .form-row { display: flex; gap: 20rpx; }
-    .form-row .form-item { flex: 1; }
-    .pagination { display: flex; justify-content: center; gap: 16rpx; margin-top: 30rpx; }
-    .pagination button { padding: 16rpx 24rpx; background: #fff; border: 1rpx solid #ddd; border-radius: 8rpx; cursor: pointer; }
-    .pagination button:disabled { opacity: 0.5; }
-    .pagination button.active { background: #e63946; color: #fff; border-color: #e63946; }
-    .order-items { margin-top: 20rpx; }
-    .order-item { display: flex; align-items: center; gap: 20rpx; padding: 20rpx; background: #fafafa; border-radius: 8rpx; margin-bottom: 16rpx; }
-    .order-item img { width: 100rpx; height: 100rpx; object-fit: cover; border-radius: 8rpx; }
-    .order-item-info { flex: 1; }
-    .empty { text-align: center; padding: 60rpx; color: #999; }
-    @media (min-width: 768px) {
-      .stats { grid-template-columns: repeat(4, 1fr); }
-      .content { max-width: 1200rpx; margin: 0 auto; }
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50: '#fef2f2', 100: '#fee2e2', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c' },
+            secondary: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a' }
+          }
+        }
+      }
     }
-  </style>
+  </script>
 </head>
-<body>
-  <div id="login-page" class="login-page">
-    <div class="login-box">
-      <div class="login-title">Admin Login</div>
-      <input id="username" class="input" placeholder="Username">
-      <input id="password" class="input" type="password" placeholder="Password">
-      <button class="btn" onclick="login()">Login</button>
+<body class="bg-gray-50 min-h-screen">
+  <!-- Login Page -->
+  <div id="login-page" class="flex items-center justify-center min-h-screen">
+    <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-store text-2xl text-red-500"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-800">Admin Login</h1>
+        <p class="text-gray-500 text-sm mt-1">Daily Goods Store</p>
+      </div>
+      <form id="login-form">
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-medium mb-2">Username</label>
+          <input id="username" type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition" placeholder="Enter username">
+        </div>
+        <div class="mb-6">
+          <label class="block text-gray-700 text-sm font-medium mb-2">Password</label>
+          <input id="password" type="password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition" placeholder="Enter password">
+        </div>
+        <button id="login-btn" type="button" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-lg transition duration-200" onclick="console.log('Button clicked'); login()">
+          Sign In
+        </button>
+      </form>
     </div>
   </div>
-  <div id="admin-page" class="admin-page">
-    <div class="header">
-      <h1>Admin Panel</h1>
-      <span class="logout-btn" onclick="logout()">Logout</span>
-    </div>
-    <div class="nav">
-      <div class="nav-item active" data-page="dashboard">Dashboard</div>
-      <div class="nav-item" data-page="products">Products</div>
-      <div class="nav-item" data-page="categories">Categories</div>
-      <div class="nav-item" data-page="orders">Orders</div>
-      <div class="nav-item" data-page="banners">Banners</div>
-    </div>
-    <div class="content">
-      <div id="page-dashboard" class="page">
-        <div class="stats">
-          <div class="stat-box">
-            <div class="stat-value" id="stat-products">0</div>
-            <div class="stat-label">Products</div>
+
+  <!-- Admin Page -->
+  <div id="admin-page" class="hidden flex h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-lg flex flex-col">
+      <div class="p-6 border-b border-gray-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center">
+            <i class="fas fa-store text-white"></i>
           </div>
-          <div class="stat-box orange">
-            <div class="stat-value" id="stat-orders">0</div>
-            <div class="stat-label">Orders</div>
-          </div>
-          <div class="stat-box blue">
-            <div class="stat-value" id="stat-revenue">¥0</div>
-            <div class="stat-label">Revenue</div>
-          </div>
-          <div class="stat-box purple">
-            <div class="stat-value" id="stat-pending">0</div>
-            <div class="stat-label">Pending Orders</div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="chart-container">
-            <canvas id="orders-chart"></canvas>
+          <div>
+            <h2 class="font-bold text-gray-800">Admin Panel</h2>
+            <p class="text-xs text-gray-500">Daily Goods</p>
           </div>
         </div>
       </div>
-      <div id="page-products" class="page" style="display:none">
-        <div class="card">
-          <div class="toolbar">
-            <input id="product-search" class="input" placeholder="Search products..." onkeyup="searchProducts()">
-            <select id="product-category-filter" onchange="searchProducts()">
-              <option value="">All Categories</option>
-            </select>
-            <select id="product-status-filter" onchange="searchProducts()">
+      <nav class="flex-1 p-4">
+        <ul class="space-y-2">
+          <li>
+            <a href="#" data-page="dashboard" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-500 transition">
+              <i class="fas fa-chart-line w-5"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" data-page="products" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-500 transition">
+              <i class="fas fa-box w-5"></i>
+              <span>Products</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" data-page="categories" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-500 transition">
+              <i class="fas fa-tags w-5"></i>
+              <span>Categories</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" data-page="orders" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-500 transition">
+              <i class="fas fa-shopping-cart w-5"></i>
+              <span>Orders</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" data-page="banners" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-500 transition">
+              <i class="fas fa-images w-5"></i>
+              <span>Banners</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="p-4 border-t border-gray-100">
+        <button onclick="logout()" class="flex items-center gap-3 px-4 py-3 w-full text-gray-600 hover:bg-red-50 hover:text-red-500 rounded-lg transition">
+          <i class="fas fa-sign-out-alt w-5"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <!-- Header -->
+      <header class="bg-white shadow-sm border-b border-gray-100 px-8 py-4 flex items-center justify-between">
+        <h1 class="text-xl font-semibold text-gray-800" id="page-title">Dashboard</h1>
+        <div class="flex items-center gap-4">
+          <span class="text-sm text-gray-500">Welcome, Admin</span>
+          <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <i class="fas fa-user text-red-500"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <div class="flex-1 overflow-auto p-8" id="main-content">
+        <!-- Dashboard -->
+        <div id="page-dashboard" class="page">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white shadow-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-red-100 text-sm">Products</p>
+                  <p class="text-3xl font-bold mt-1" id="stat-products">0</p>
+                </div>
+                <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+                  <i class="fas fa-box text-2xl"></i>
+                </div>
+              </div>
+            </div>
+            <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-orange-100 text-sm">Orders</p>
+                  <p class="text-3xl font-bold mt-1" id="stat-orders">0</p>
+                </div>
+                <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+                  <i class="fas fa-shopping-bag text-2xl"></i>
+                </div>
+              </div>
+            </div>
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-blue-100 text-sm">Revenue</p>
+                  <p class="text-3xl font-bold mt-1" id="stat-revenue">¥0</p>
+                </div>
+                <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+                  <i class="fas fa-yen-sign text-2xl"></i>
+                </div>
+              </div>
+            </div>
+            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-purple-100 text-sm">Pending</p>
+                  <p class="text-3xl font-bold mt-1" id="stat-pending">0</p>
+                </div>
+                <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+                  <i class="fas fa-clock text-2xl"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Revenue Trend</h3>
+            <div class="h-64">
+              <canvas id="orders-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Products -->
+        <div id="page-products" class="page hidden">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="p-6 border-b border-gray-100 flex flex-wrap gap-4 items-center">
+              <div class="flex-1 min-w-64">
+                <input id="product-search" type="text" placeholder="Search products..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" onkeyup="searchProducts()">
+              </div>
+              <select id="product-category-filter" onchange="searchProducts()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                <option value="">All Categories</option>
+              </select>
+              <select id="product-status-filter" onchange="searchProducts()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                <option value="1">Active</option>
+                <option value="0">Inactive</option>
+                <option value="">All</option>
+              </select>
+              <button onclick="showProductModal()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2">
+                <i class="fas fa-plus"></i> Add Product
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Image</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Name</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Category</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Price</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Stock</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Sales</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Status</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="products-list" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-100">
+              <div id="products-pagination" class="flex justify-center gap-2"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Categories -->
+        <div id="page-categories" class="page hidden">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h3 class="text-lg font-semibold text-gray-800">Categories</h3>
+              <button onclick="showCategoryModal()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2">
+                <i class="fas fa-plus"></i> Add Category
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">ID</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Name (EN)</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Name (ZH)</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Icon</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="categories-list" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orders -->
+        <div id="page-orders" class="page hidden">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="p-6 border-b border-gray-100 flex flex-wrap gap-4 items-center">
+              <select id="order-status-filter" onchange="searchOrders()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="shipped">Shipped</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">ID</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Order No</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">User</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Total</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Status</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Date</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="orders-list" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-100">
+              <div id="orders-pagination" class="flex justify-center gap-2"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Banners -->
+        <div id="page-banners" class="page hidden">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h3 class="text-lg font-semibold text-gray-800">Banners</h3>
+              <button onclick="showBannerModal()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2">
+                <i class="fas fa-plus"></i> Add Banner
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Image</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Title</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Link</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Status</th>
+                    <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="banners-list" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modals -->
+  <div id="product-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-auto">
+      <div class="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white">
+        <h3 class="text-xl font-semibold text-gray-800" id="product-modal-title">Add Product</h3>
+        <button onclick="closeModal('product-modal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <form class="p-6 space-y-4" onsubmit="event.preventDefault(); saveProduct();">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+          <input id="product-name" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" required>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Price</label>
+            <input id="product-price" type="number" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Original Price</label>
+            <input id="product-original-price" type="number" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+            <input id="product-stock" type="number" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <select id="product-status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
               <option value="1">Active</option>
               <option value="0">Inactive</option>
-              <option value="">All</option>
-            </select>
-            <button class="btn btn-sm" onclick="showProductModal()">+ Add</button>
-          </div>
-          <table>
-            <thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Sales</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody id="products-list"></tbody>
-          </table>
-          <div class="pagination" id="products-pagination"></div>
-        </div>
-      </div>
-      <div id="page-categories" class="page" style="display:none">
-        <div class="card">
-          <div class="toolbar">
-            <button class="btn btn-sm" onclick="showCategoryModal()">+ Add Category</button>
-          </div>
-          <table>
-            <thead><tr><th>ID</th><th>Name (EN)</th><th>Name (ZH)</th><th>Icon</th><th>Actions</th></tr></thead>
-            <tbody id="categories-list"></tbody>
-          </table>
-        </div>
-      </div>
-      <div id="page-orders" class="page" style="display:none">
-        <div class="card">
-          <div class="toolbar">
-            <select id="order-status-filter" onchange="searchOrders()">
-              <option value="">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="paid">Paid</option>
-              <option value="shipped">Shipped</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
             </select>
           </div>
-          <table>
-            <thead><tr><th>ID</th><th>Order No</th><th>User</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
-            <tbody id="orders-list"></tbody>
-          </table>
-          <div class="pagination" id="orders-pagination"></div>
         </div>
-      </div>
-      <div id="page-banners" class="page" style="display:none">
-        <div class="card">
-          <div class="toolbar">
-            <button class="btn btn-sm" onclick="showBannerModal()">+ Add Banner</button>
-          </div>
-          <table>
-            <thead><tr><th>Image</th><th>Title</th><th>Link</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody id="banners-list"></tbody>
-          </table>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+          <input id="product-image" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
         </div>
-      </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <select id="product-category" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea id="product-description" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"></textarea>
+        </div>
+        <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-lg transition">Save Product</button>
+      </form>
     </div>
   </div>
-  <div id="product-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title" id="product-modal-title">Add Product</div>
-        <span class="close" onclick="closeModal('product-modal')">&times;</span>
+
+  <div id="category-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+        <h3 class="text-xl font-semibold text-gray-800">Add Category</h3>
+        <button onclick="closeModal('category-modal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
       </div>
-      <div class="form">
-        <div class="form-item"><label>Name</label><input id="product-name" placeholder="Product name"></div>
-        <div class="form-row">
-          <div class="form-item"><label>Price</label><input id="product-price" type="number" step="0.01" placeholder="Price"></div>
-          <div class="form-item"><label>Original</label><input id="product-original-price" type="number" step="0.01" placeholder="Original price"></div>
+      <form class="p-6 space-y-4" onsubmit="event.preventDefault(); saveCategory();">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Name (English)</label>
+          <input id="category-name-en" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" required>
         </div>
-        <div class="form-row">
-          <div class="form-item"><label>Stock</label><input id="product-stock" type="number" placeholder="Stock"></div>
-          <div class="form-item"><label>Status</label><select id="product-status"><option value="1">Active</option><option value="0">Inactive</option></select></div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Name (Chinese)</label>
+          <input id="category-name-zh" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" required>
         </div>
-        <div class="form-item"><label>Image</label><input id="product-image" placeholder="Image URL"></div>
-        <div class="form-item"><label>Category</label><select id="product-category"></select></div>
-        <div class="form-item"><label>Description</label><textarea id="product-description" placeholder="Description"></textarea></div>
-        <button class="btn" onclick="saveProduct()">Save</button>
-      </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Icon (optional)</label>
+          <input id="category-icon" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" placeholder="e.g. fas fa-tag">
+        </div>
+        <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-lg transition">Save Category</button>
+      </form>
     </div>
   </div>
-  <div id="category-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title">Add Category</div>
-        <span class="close" onclick="closeModal('category-modal')">&times;</span>
+
+  <div id="banner-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+        <h3 class="text-xl font-semibold text-gray-800">Add Banner</h3>
+        <button onclick="closeModal('banner-modal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
       </div>
-      <div class="form">
-        <div class="form-item"><label>Name (EN)</label><input id="category-name-en" placeholder="English name"></div>
-        <div class="form-item"><label>Name (ZH)</label><input id="category-name-zh" placeholder="Chinese name"></div>
-        <div class="form-item"><label>Icon</label><input id="category-icon" placeholder="Icon class"></div>
-        <button class="btn" onclick="saveCategory()">Save</button>
-      </div>
+      <form class="p-6 space-y-4" onsubmit="event.preventDefault(); saveBanner();">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+          <input id="banner-title" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+          <input id="banner-image" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Link Type</label>
+          <select id="banner-link-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
+            <option value="">None</option>
+            <option value="category">Category</option>
+            <option value="product">Product</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Link Value (ID)</label>
+          <input id="banner-link-value" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
+        </div>
+        <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-lg transition">Save Banner</button>
+      </form>
     </div>
   </div>
-  <div id="banner-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title">Add Banner</div>
-        <span class="close" onclick="closeModal('banner-modal')">&times;</span>
+
+  <div id="order-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-auto">
+      <div class="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white">
+        <h3 class="text-xl font-semibold text-gray-800">Order Detail</h3>
+        <button onclick="closeModal('order-modal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
       </div>
-      <div class="form">
-        <div class="form-item"><label>Title</label><input id="banner-title" placeholder="Banner title"></div>
-        <div class="form-item"><label>Image</label><input id="banner-image" placeholder="Image URL"></div>
-        <div class="form-item"><label>Link Type</label><select id="banner-link-type"><option value="">None</option><option value="category">Category</option><option value="product">Product</option></select></div>
-        <div class="form-item"><label>Link</label><input id="banner-link-value" placeholder="ID"></div>
-        <button class="btn" onclick="saveBanner()">Save</button>
-      </div>
-    </div>
-  </div>
-  <div id="order-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title">Order Detail</div>
-        <span class="close" onclick="closeModal('order-modal')">&times;</span>
-      </div>
-      <div id="order-detail"></div>
+      <div id="order-detail" class="p-6"></div>
     </div>
   </div>
   <script>
     let chart = null;
     let adminToken = '';
     let categories = [];
+    let currentPage = { products: 1, orders: 1 };
 
-    async function login() {
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await res.json();
-      if (data.code === 0) {
-        adminToken = data.data.token;
-        localStorage.setItem('adminToken', adminToken);
-        showAdmin();
-      } else {
-        alert(data.message);
+    function api(url, options = {}) {
+      const token = localStorage.getItem('adminToken');
+      const headers = options.headers || {};
+      if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
       }
+      return fetch(url, Object.assign({}, options, { headers }));
+    }
+
+    function login() {
+      console.log('Login called');
+      var username = document.getElementById('username').value;
+      var password = document.getElementById('password').value;
+      
+      console.log('Username:', username, 'Password:', password ? '***' : '');
+      
+      if (!username || !password) {
+        alert('Please enter username and password');
+        return;
+      }
+      
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/admin/login', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            var data = JSON.parse(xhr.responseText);
+            console.log('Response:', data);
+            if (data.code === 0) {
+              adminToken = data.data.token;
+              localStorage.setItem('adminToken', adminToken);
+              showAdmin();
+            } else {
+              alert(data.message || 'Login failed');
+            }
+          } else {
+            alert('Request failed: ' + xhr.status);
+          }
+        }
+      };
+      xhr.send(JSON.stringify({ username: username, password: password }));
     }
 
     async function logout() {
+      try {
+        await fetch('/api/admin/logout', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') }
+        });
+      } catch (e) {
+        console.error('Logout failed', e);
+      }
       adminToken = '';
       localStorage.removeItem('adminToken');
       location.reload();
     }
 
     function showAdmin() {
-      document.getElementById('login-page').style.display = 'none';
-      document.getElementById('admin-page').style.display = 'block';
+      document.getElementById('login-page').classList.add('hidden');
+      document.getElementById('admin-page').classList.remove('hidden');
+      document.getElementById('admin-page').classList.add('flex');
+      document.querySelector('.nav-item[data-page="dashboard"]').classList.add('active', 'bg-red-50', 'text-red-500');
       loadCategoriesForSelect();
       loadPage('dashboard');
     }
 
-    if (localStorage.getItem('adminToken')) {
-      adminToken = localStorage.getItem('adminToken');
-      showAdmin();
+    async function checkAuth() {
+      const token = localStorage.getItem('adminToken');
+      if (token) {
+        try {
+          const res = await fetch('/api/admin/stats', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (res.status === 200) {
+            adminToken = token;
+            showAdmin();
+          } else {
+            localStorage.removeItem('adminToken');
+          }
+        } catch (e) {
+          console.error('Auth check failed', e);
+        }
+      }
     }
+    checkAuth();
+
+    const pageTitles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', orders: 'Orders', banners: 'Banners' };
 
     document.querySelectorAll('.nav-item').forEach(item => {
-      item.addEventListener('click', () => {
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-        document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-        document.getElementById('page-' + item.dataset.page).style.display = 'block';
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active', 'bg-red-50', 'text-red-500'));
+        item.classList.add('active', 'bg-red-50', 'text-red-500');
+        document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+        document.getElementById('page-' + item.dataset.page).classList.remove('hidden');
+        document.getElementById('page-title').textContent = pageTitles[item.dataset.page] || 'Dashboard';
         loadPage(item.dataset.page);
       });
     });
@@ -581,18 +823,18 @@ function adminRouter(app, database, authenticate, {
 
     function renderProducts(products) {
       if (!products || products.length === 0) {
-        document.getElementById('products-list').innerHTML = '<tr><td colspan="8" class="empty">No products</td></tr>';
+        document.getElementById('products-list').innerHTML = '<tr><td colspan="8" class="px-6 py-12 text-center text-gray-500">No products found</td></tr>';
         return;
       }
-      document.getElementById('products-list').innerHTML = products.map(p => '<tr>' +
-        '<td><img src="' + (p.image || 'https://via.placeholder.com/80') + '" class="product-img"></td>' +
-        '<td>' + p.name + '</td>' +
-        '<td>' + (p.category_name_en || '-') + '</td>' +
-        '<td>¥' + p.price + '</td>' +
-        '<td>' + p.stock + '</td>' +
-        '<td>' + p.sales + '</td>' +
-        '<td><span class="status-badge" style="background:' + (p.status ? '#4caf50' : '#999') + '">' + (p.status ? 'Active' : 'Inactive') + '</span></td>' +
-        '<td><div class="actions"><span class="action-link" onclick="editProduct(' + p.id + ')">Edit</span> <span class="action-link delete" onclick="deleteProduct(' + p.id + ')">Delete</span></div></td></tr>').join('');
+      document.getElementById('products-list').innerHTML = products.map(p => '<tr class="hover:bg-gray-50 transition">' +
+        '<td class="px-6 py-4"><img src="' + (p.image || 'https://via.placeholder.com/80') + '" class="w-12 h-12 rounded-lg object-cover"></td>' +
+        '<td class="px-6 py-4 font-medium text-gray-800">' + p.name + '</td>' +
+        '<td class="px-6 py-4 text-gray-600">' + (p.category_name_en || '-') + '</td>' +
+        '<td class="px-6 py-4 font-semibold text-gray-800">¥' + p.price + '</td>' +
+        '<td class="px-6 py-4"><span class="' + (p.stock > 10 ? 'text-green-600' : 'text-orange-600') + ' font-medium">' + p.stock + '</span></td>' +
+        '<td class="px-6 py-4 text-gray-600">' + p.sales + '</td>' +
+        '<td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-medium ' + (p.status ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600') + '">' + (p.status ? 'Active' : 'Inactive') + '</span></td>' +
+        '<td class="px-6 py-4"><div class="flex gap-3"><button onclick="editProduct(' + p.id + ')" class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button><button onclick="deleteProduct(' + p.id + ')" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button></div></td></tr>').join('');
     }
 
     async function loadProducts() {
@@ -619,34 +861,41 @@ function adminRouter(app, database, authenticate, {
 
     function renderOrders(orders) {
       if (!orders || orders.length === 0) {
-        document.getElementById('orders-list').innerHTML = '<tr><td colspan="7" class="empty">No orders</td></tr>';
+        document.getElementById('orders-list').innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-gray-500">No orders found</td></tr>';
         return;
       }
-      document.getElementById('orders-list').innerHTML = orders.map(o => '<tr>' +
-        '<td>' + o.id + '</td>' +
-        '<td>' + o.order_no + '</td>' +
-        '<td>User #' + o.user_id + '</td>' +
-        '<td>¥' + o.actual_price + '</td>' +
-        '<td><span class="status-badge" style="background:' + getStatusColor(o.status) + '">' + o.status + '</span></td>' +
-        '<td>' + (o.created_at || '').split(' ')[0] + '</td>' +
-        '<td><div class="actions"><span class="action-link" onclick="viewOrder(' + o.id + ')">View</span></div></td></tr>').join('');
+      const statusColors = { pending: 'bg-orange-100 text-orange-700', paid: 'bg-blue-100 text-blue-700', shipped: 'bg-purple-100 text-purple-700', completed: 'bg-green-100 text-green-700', cancelled: 'bg-red-100 text-red-700' };
+      document.getElementById('orders-list').innerHTML = orders.map(o => '<tr class="hover:bg-gray-50 transition">' +
+        '<td class="px-6 py-4 text-gray-600">#' + o.id + '</td>' +
+        '<td class="px-6 py-4 font-medium text-gray-800">' + o.order_no + '</td>' +
+        '<td class="px-6 py-4 text-gray-600">User #' + o.user_id + '</td>' +
+        '<td class="px-6 py-4 font-semibold text-gray-800">¥' + o.actual_price + '</td>' +
+        '<td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-medium ' + (statusColors[o.status] || 'bg-gray-100 text-gray-600') + '">' + o.status + '</span></td>' +
+        '<td class="px-6 py-4 text-gray-500 text-sm">' + (o.created_at || '').split(' ')[0] + '</td>' +
+        '<td class="px-6 py-4"><button onclick="viewOrder(' + o.id + ')" class="text-blue-500 hover:text-blue-700"><i class="fas fa-eye"></i></button></td></tr>').join('');
     }
 
-    async function viewOrder(id) {
+async function viewOrder(id) {
       const res = await api('/api/admin/orders/' + id);
       const data = await res.json();
       if (data.code === 0) {
         const o = data.data;
-        const statusOptions = ['pending', 'paid', 'shipped', 'completed', 'cancelled'].map(s => '<option value="' + s + '"' + (o.status === s ? ' selected' : '') + '>' + s + '</option>').join('');
-        document.getElementById('order-detail').innerHTML = '<div style="margin-bottom:20rpx"><strong>Order:</strong> ' + o.order_no + '</div>' +
-          '<div style="margin-bottom:20rpx"><strong>Status:</strong> <select id="order-status-select" onchange="updateOrderStatus(' + o.id + ')">' + statusOptions + '</select></div>' +
-          '<div style="margin-bottom:20rpx"><strong>Total:</strong> ¥' + o.actual_price + '</div>' +
-          '<div style="margin-bottom:20rpx"><strong>Address:</strong> ' + (o.address || '-') + '</div>' +
-          '<div class="order-items"><strong>Items:</strong>' + (o.items || []).map(i => '<div class="order-item">' +
-            '<img src="' + (i.product_image || 'https://via.placeholder.com/100') + '">' +
-            '<div class="order-item-info"><div>' + i.product_name + '</div><div>¥' + i.price + ' x ' + i.quantity + '</div></div>' +
-            '<div>¥' + i.subtotal + '</div></div>').join('') + '</div>';
-        document.getElementById('order-modal').classList.add('show');
+        const statusOptions = ['pending', 'paid', 'shipped', 'completed', 'cancelled'].map(s => '<option value="' + s + '"' + (o.status === s ? ' selected' : '') + '">' + s.charAt(0).toUpperCase() + s.slice(1) + '</option>').join('');
+        document.getElementById('order-detail').innerHTML = 
+          '<div class="mb-4 p-4 bg-gray-50 rounded-lg">' +
+            '<div class="flex justify-between items-center mb-3"><span class="text-gray-500">Order No</span><span class="font-medium text-gray-800">' + o.order_no + '</span></div>' +
+            '<div class="flex justify-between items-center mb-3"><span class="text-gray-500">Status</span><select id="order-status-select" onchange="updateOrderStatus(' + o.id + ')" class="px-3 py-1 border border-gray-300 rounded-lg text-sm">' + statusOptions + '</select></div>' +
+            '<div class="flex justify-between items-center mb-3"><span class="text-gray-500">Total</span><span class="font-bold text-lg text-gray-800">¥' + o.actual_price + '</span></div>' +
+            '<div class="flex justify-between items-center"><span class="text-gray-500">Address</span><span class="text-gray-700 text-right">' + (o.address || '-') + '</span></div>' +
+          '</div>' +
+          '<div><h4 class="font-medium text-gray-800 mb-3">Order Items</h4>' +
+          (o.items || []).map(i => '<div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg mb-2">' +
+            '<img src="' + (i.product_image || 'https://via.placeholder.com/80') + '" class="w-14 h-14 rounded-lg object-cover">' +
+            '<div class="flex-1"><div class="font-medium text-gray-800">' + i.product_name + '</div><div class="text-sm text-gray-500">¥' + i.price + ' x ' + i.quantity + '</div></div>' +
+            '<div class="font-semibold text-gray-800">¥' + i.subtotal + '</div></div>').join('') + '</div>';
+        const modal = document.getElementById('order-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
       }
     }
 
@@ -664,7 +913,7 @@ function adminRouter(app, database, authenticate, {
       const res = await api('/api/admin/categories');
       const data = await res.json();
       if (data.code === 0) {
-        document.getElementById('categories-list').innerHTML = data.data.map(c => '<tr><td>' + c.id + '</td><td>' + c.name_en + '</td><td>' + c.name_zh + '</td><td>' + (c.icon || '-') + '</td><td><div class="actions"><span class="action-link delete" onclick="deleteCategory(' + c.id + ')">Delete</span></div></td></tr>').join('');
+        document.getElementById('categories-list').innerHTML = data.data.map(c => '<tr class="hover:bg-gray-50 transition"><td class="px-6 py-4 text-gray-600">#' + c.id + '</td><td class="px-6 py-4 font-medium text-gray-800">' + c.name_en + '</td><td class="px-6 py-4 text-gray-600">' + c.name_zh + '</td><td class="px-6 py-4 text-gray-500"><i class="' + (c.icon || 'fas fa-tag') + '"></i></td><td class="px-6 py-4"><button onclick="deleteCategory(' + c.id + ')" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button></td></tr>').join('');
       }
     }
 
@@ -672,12 +921,12 @@ function adminRouter(app, database, authenticate, {
       const res = await api('/api/admin/banners');
       const data = await res.json();
       if (data.code === 0) {
-        document.getElementById('banners-list').innerHTML = data.data.map(b => '<tr>' +
-          '<td><img src="' + b.image + '" class="product-img"></td>' +
-          '<td>' + (b.title || '-') + '</td>' +
-          '<td>' + (b.link_type ? b.link_type + ': ' + b.link_value : '-') + '</td>' +
-          '<td><span class="status-badge" style="background:' + (b.status ? '#4caf50' : '#999') + '">' + (b.status ? 'Active' : 'Inactive') + '</span></td>' +
-          '<td><div class="actions"><span class="action-link delete" onclick="deleteBanner(' + b.id + ')">Delete</span></div></td></tr>').join('');
+        document.getElementById('banners-list').innerHTML = data.data.map(b => '<tr class="hover:bg-gray-50 transition">' +
+          '<td class="px-6 py-4"><img src="' + b.image + '" class="w-16 h-10 rounded-lg object-cover"></td>' +
+          '<td class="px-6 py-4 font-medium text-gray-800">' + (b.title || '-') + '</td>' +
+          '<td class="px-6 py-4 text-gray-600 text-sm">' + (b.link_type ? b.link_type + ': ' + b.link_value : '-') + '</td>' +
+          '<td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-medium ' + (b.status ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600') + '">' + (b.status ? 'Active' : 'Inactive') + '</span></td>' +
+          '<td class="px-6 py-4"><button onclick="deleteBanner(' + b.id + ')" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button></td></tr>').join('');
       }
     }
 
@@ -689,16 +938,16 @@ function adminRouter(app, database, authenticate, {
       }
       let html = '';
       const prev = page - 1;
-      html += '<button ' + (prev < 1 ? 'disabled' : '') + ' onclick="changePage(\\'' + type + '\\',' + prev + ')">Prev</button>';
+      html += '<button ' + (prev < 1 ? 'disabled' : '') + ' onclick="changePage(\\'' + type + '\\',' + prev + ')" class="px-3 py-1 rounded border ' + (prev < 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-600') + '">Prev</button>';
       for (let i = 1; i <= totalPages; i++) {
         if (i === page || i === 1 || i === totalPages || (i > page - 2 && i < page + 2)) {
-          html += '<button class="' + (i === page ? 'active' : '') + '" onclick="changePage(\\'' + type + '\\',' + i + ')">' + i + '</button>';
+          html += '<button onclick="changePage(\\'' + type + '\\',' + i + ')" class="px-3 py-1 rounded border ' + (i === page ? 'bg-red-500 text-white border-red-500' : 'bg-white hover:bg-gray-50 text-gray-600') + '">' + i + '</button>';
         } else if (i === page - 3 || i === page + 3) {
-          html += '<span>...</span>';
+          html += '<span class="text-gray-400">...</span>';
         }
       }
       const next = page + 1;
-      html += '<button ' + (next > totalPages ? 'disabled' : '') + ' onclick="changePage(\\'' + type + '\\',' + next + ')">Next</button>';
+      html += '<button ' + (next > totalPages ? 'disabled' : '') + ' onclick="changePage(\\'' + type + '\\',' + next + ')" class="px-3 py-1 rounded border ' + (next > totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-600') + '">Next</button>';
       document.getElementById(type + '-pagination').innerHTML = html;
     }
 
@@ -708,10 +957,13 @@ function adminRouter(app, database, authenticate, {
       else if (type === 'orders') searchOrders();
     }
 
-    let editingProductId = null;
+let editingProductId = null;
 
     function showProductModal(id = null) {
       editingProductId = id;
+      const modal = document.getElementById('product-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
       document.getElementById('product-modal-title').textContent = id ? 'Edit Product' : 'Add Product';
       if (!id) {
         document.getElementById('product-name').value = '';
@@ -722,7 +974,6 @@ function adminRouter(app, database, authenticate, {
         document.getElementById('product-image').value = '';
         document.getElementById('product-description').value = '';
       }
-      document.getElementById('product-modal').classList.add('show');
     }
 
     async function editProduct(id) {
@@ -739,8 +990,29 @@ function adminRouter(app, database, authenticate, {
         document.getElementById('product-image').value = p.image || '';
         document.getElementById('product-description').value = p.description || '';
         editingProductId = id;
-        document.getElementById('product-modal').classList.add('show');
+        const modal = document.getElementById('product-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
       }
+    }
+
+    function showCategoryModal() {
+      document.getElementById('category-name-en').value = '';
+      document.getElementById('category-name-zh').value = '';
+      document.getElementById('category-icon').value = '';
+      const modal = document.getElementById('category-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function showBannerModal() {
+      document.getElementById('banner-title').value = '';
+      document.getElementById('banner-image').value = '';
+      document.getElementById('banner-link-type').value = '';
+      document.getElementById('banner-link-value').value = '';
+      const modal = document.getElementById('banner-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
     }
 
     async function saveProduct() {
@@ -780,7 +1052,9 @@ function adminRouter(app, database, authenticate, {
       document.getElementById('category-name-en').value = '';
       document.getElementById('category-name-zh').value = '';
       document.getElementById('category-icon').value = '';
-      document.getElementById('category-modal').classList.add('show');
+      const modal = document.getElementById('category-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
     }
 
     async function saveCategory() {
@@ -808,7 +1082,9 @@ function adminRouter(app, database, authenticate, {
       document.getElementById('banner-image').value = '';
       document.getElementById('banner-link-type').value = '';
       document.getElementById('banner-link-value').value = '';
-      document.getElementById('banner-modal').classList.add('show');
+      const modal = document.getElementById('banner-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
     }
 
     async function saveBanner() {
@@ -833,7 +1109,9 @@ function adminRouter(app, database, authenticate, {
     }
 
     function closeModal(id) {
-      document.getElementById(id).classList.remove('show');
+      const modal = document.getElementById(id);
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
     }
   </script>
 </body>

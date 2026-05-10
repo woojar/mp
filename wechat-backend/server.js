@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const {
   initializeDatabase,
-  db,
+  getDb,
   userOps,
   categoryOps,
   productOps,
@@ -390,7 +390,7 @@ async function startServer() {
     res.json(success(null, 'Order confirmed'));
   });
 
-  adminRouter(app, db, authenticate, {
+  adminRouter(app, getDb(), authenticate, {
     categoryOps,
     productOps,
     addressOps,
