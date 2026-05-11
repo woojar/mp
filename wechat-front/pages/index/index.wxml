@@ -24,7 +24,7 @@
 
   <view class="product-grid">
     <view class="product-card" wx:for="{{products}}" wx:key="id" data-id="{{item.id}}" bindtap="onProductTap">
-      <image class="product-image" src="{{item.image}}" mode="aspectFill" />
+      <image class="product-image" src="{{item.image}}" data-src="{{item.image}}" mode="aspectFill" lazy-load="true" binderror="onImageError" bindload="onImageLoad" />
       <view class="product-info">
         <view class="product-name">{{item.name}}</view>
         <view class="product-price-row">

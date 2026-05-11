@@ -4,7 +4,9 @@ const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
+const sharp = require('sharp');
 
 const {
   initializeDatabase,
@@ -38,13 +40,13 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    cb(null, uniqueSuffix + path.extname(file.originalname).toLowerCase());
   }
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -56,6 +58,30 @@ const upload = multer({
     }
   }
 });
+
+const resizeImage = async (req, res, next) => {
+  if (!req.file) return next();
+  
+  try {
+    const metadata = await sharp(req.file.path).metadata();
+    const maxSize = 1920;
+    
+    if (metadata.width > maxSize || metadata.height > maxSize) {
+      const tempPath = req.file.path + '.tmp';
+      await sharp(req.file.path)
+        .resize(maxSize, maxSize, { fit: 'inside', withoutEnlargement: true })
+        .toFile(tempPath);
+      
+      await fs.rename(tempPath, req.file.path);
+    }
+    
+    req.file.url = '/uploads/' + req.file.filename;
+    next();
+  } catch (err) {
+    console.error('Resize error:', err.message);
+    res.status(500).json({ code: 500, message: 'Image processing failed: ' + err.message });
+  }
+};
 
 function generateToken(user) {
   return jwt.sign({ id: user.id, openid: user.openid }, JWT_SECRET, { expiresIn: '30d' });
@@ -93,31 +119,53 @@ async function startServer() {
   app.post('/api/auth/login', (req, res) => {
     const { code, userInfo } = req.body;
     
+    console.log('=== LOGIN REQUEST ===');
+    console.log('Code:', code ? 'exists' : 'MISSING');
+    console.log('UserInfo:', userInfo);
+    
     if (!code) {
+      console.log('Login failed: code is required');
       return res.json(error(400, 'Code is required'));
     }
     
-    const openid = 'wx_' + code.substring(0, 20) + '_' + Date.now();
-    
-    let user = userOps.findByOpenid(openid);
-    if (!user) {
-      user = userOps.create(openid, userInfo || {});
-    } else if (userInfo) {
-      user = userOps.update(user.id, userInfo);
-    }
-    
-    const token = generateToken(user);
-    
-    res.json(success({
-      token,
-      user: {
-        id: user.id,
-        nickname: user.nickname,
-        avatar: user.avatar,
-        phone: user.phone,
-        language: user.language
+    try {
+      const openid = 'wx_' + code.substring(0, 20) + '_' + Date.now();
+      console.log('Generated openid:', openid);
+      
+      let user = userOps.findByOpenid(openid);
+      console.log('Existing user:', user ? 'found' : 'not found');
+      
+      if (!user) {
+        console.log('Creating new user...');
+        user = userOps.create(openid, userInfo || {});
+        console.log('Created user:', user);
+      } else if (userInfo) {
+        user = userOps.update(user.id, userInfo);
       }
-    }));
+      
+      if (!user) {
+        console.error('User is null after create/find');
+        return res.json(error(500, 'Failed to create user'));
+      }
+      
+      console.log('Generating token for user:', user.id);
+      const token = generateToken(user);
+      
+      console.log('Login successful');
+      res.json(success({
+        token,
+        user: {
+          id: user.id,
+          nickname: user.nickname,
+          avatar: user.avatar,
+          phone: user.phone,
+          language: user.language
+        }
+      }));
+    } catch (err) {
+      console.error('Login error:', err.message, err.stack);
+      res.json(error(500, 'Login failed: ' + err.message));
+    }
   });
 
   app.get('/api/auth/profile', authenticate, (req, res) => {
@@ -430,7 +478,7 @@ async function startServer() {
     adminBannerOps,
     adminOrderOps,
     adminProductOps
-  }, upload);
+  }, upload, resizeImage);
 
   app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);

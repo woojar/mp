@@ -27,17 +27,24 @@ Page({
       url: `${app.globalData.apiBase}/products`,
       data: { category: this.data.currentCategory > 0 ? this.data.currentCategory : undefined },
       success: (res) => {
+        console.log('API Response:', res.data);
         if (res.data.code === 0) {
-          this.setData({ products: res.data.data.products || [] });
+          const products = (res.data.data.products || []).map(p => {
+            const imageUrl = p.image && p.image.startsWith('http') ? p.image : `${app.globalData.apiBase.replace('/api', '')}${p.image}`;
+            console.log('Product:', p.name, 'Image URL:', imageUrl);
+            return { ...p, image: imageUrl };
+          });
+          this.setData({ products });
         }
       },
-      fail: () => {
+      fail: (err) => {
+        console.error('API Request Failed:', err);
         this.setData({
           products: [
-            { id: 1, name: 'Instant Noodles', price: 5.5, image: 'https://via.placeholder.com/200', sales: 1000 },
-            { id: 2, name: 'Mineral Water', price: 2.0, image: 'https://via.placeholder.com/200', sales: 5000 },
-            { id: 3, name: 'Tissue Box', price: 10.0, image: 'https://via.placeholder.com/200', sales: 800 },
-            { id: 4, name: 'Toothbrush', price: 5.0, image: 'https://via.placeholder.com/200', sales: 300 }
+            { id: 1, name: 'Instant Noodles', price: 5.5, image: '/default.png', sales: 1000 },
+            { id: 2, name: 'Mineral Water', price: 2.0, image: '/default.png', sales: 5000 },
+            { id: 3, name: 'Tissue Box', price: 10.0, image: '/default.png', sales: 800 },
+            { id: 4, name: 'Toothbrush', price: 5.0, image: '/default.png', sales: 300 }
           ]
         });
       },
@@ -60,5 +67,13 @@ Page({
 
   onSearchPage() {
     wx.navigateTo({ url: '/pages/search/search' });
+  },
+
+  onImageLoad(e) {
+    console.log('Image loaded successfully:', e.target.dataset.src);
+  },
+
+  onImageError(e) {
+    console.error('Image failed to load:', e.detail.errMsg, 'SRC:', e.target.dataset.src);
   }
 });

@@ -25,7 +25,11 @@ Page({
       url: `${app.globalData.apiBase}/products/${id}`,
       success: (res) => {
         if (res.data.code === 0) {
-          this.setData({ product: res.data.data });
+          const product = res.data.data;
+          if (product.image && !product.image.startsWith('http')) {
+            product.image = `${app.globalData.apiBase.replace('/api', '')}${product.image}`;
+          }
+          this.setData({ product });
         }
       },
       fail: () => {

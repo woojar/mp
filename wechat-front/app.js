@@ -1,7 +1,7 @@
 App({
   globalData: {
     userInfo: null,
-    apiBase: 'http://mp1.woojar.com:3000/api'
+    apiBase: 'https://mp1.woojar.com:3030/api'
   },
   onLaunch() {
     this.checkLoginStatus();

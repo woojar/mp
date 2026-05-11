@@ -15,7 +15,7 @@ function adminRouter(app, database, authenticate, {
   adminBannerOps,
   adminOrderOps,
   adminProductOps
-}, upload) {
+}, upload, resizeImage) {
   function exec(sql, params = []) {
     const stmt = database.prepare(sql);
     if (params.length > 0) stmt.bind(params);
@@ -64,7 +64,7 @@ function adminRouter(app, database, authenticate, {
     res.json({ code: 0, message: 'Logged out' });
   });
 
-  app.post('/api/admin/upload', adminAuth, upload.single('image'), (req, res) => {
+  app.post('/api/admin/upload', adminAuth, upload.single('image'), resizeImage, (req, res) => {
     if (!req.file) {
       return res.json({ code: 400, message: 'No file uploaded' });
     }
@@ -1034,20 +1034,25 @@ let editingProductId = null;
       
       document.getElementById('upload-status').textContent = 'Uploading...';
       
-      const res = await fetch('/api/admin/upload', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') },
-        body: formData
-      });
-      
-      const result = await res.json();
-      
-      if (result.code === 0) {
-        document.getElementById('upload-status').textContent = 'Upload successful!';
-        document.getElementById('product-image').value = result.data.url;
-        return result.data.url;
-      } else {
-        document.getElementById('upload-status').textContent = 'Upload failed: ' + result.message;
+      try {
+        const res = await fetch('/api/admin/upload', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('adminToken') },
+          body: formData
+        });
+        
+        const result = await res.json();
+        
+        if (result.code === 0) {
+          document.getElementById('upload-status').textContent = 'Done!';
+          document.getElementById('product-image').value = result.data.url;
+          return result.data.url;
+        } else {
+          document.getElementById('upload-status').textContent = 'Upload failed: ' + result.message;
+          return null;
+        }
+      } catch (err) {
+        document.getElementById('upload-status').textContent = 'Upload failed: ' + err.message;
         return null;
       }
     }
@@ -1059,29 +1064,33 @@ let editingProductId = null;
         if (!imageUrl) return;
       }
       
-      const data = {
-        name: document.getElementById('product-name').value,
-        price: parseFloat(document.getElementById('product-price').value),
-        original_price: parseFloat(document.getElementById('product-original-price').value) || null,
-        stock: parseInt(document.getElementById('product-stock').value) || 0,
-        status: parseInt(document.getElementById('product-status').value),
-        image: document.getElementById('product-image').value,
-        category_id: parseInt(document.getElementById('product-category').value) || null,
-        description: document.getElementById('product-description').value
-      };
-      const method = editingProductId ? 'PUT' : 'POST';
-      const url = editingProductId ? '/api/admin/products/' + editingProductId : '/api/admin/products';
-      const res = await api(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      const result = await res.json();
-      if (result.code === 0) {
-        closeModal('product-modal');
-        searchProducts();
-      } else {
-        alert(result.message);
+      try {
+        const data = {
+          name: document.getElementById('product-name').value,
+          price: parseFloat(document.getElementById('product-price').value),
+          original_price: parseFloat(document.getElementById('product-original-price').value) || null,
+          stock: parseInt(document.getElementById('product-stock').value) || 0,
+          status: parseInt(document.getElementById('product-status').value),
+          image: document.getElementById('product-image').value,
+          category_id: parseInt(document.getElementById('product-category').value) || null,
+          description: document.getElementById('product-description').value
+        };
+        const method = editingProductId ? 'PUT' : 'POST';
+        const url = editingProductId ? '/api/admin/products/' + editingProductId : '/api/admin/products';
+        const res = await api(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.code === 0) {
+          closeModal('product-modal');
+          searchProducts();
+        } else {
+          alert(result.message || 'Save failed');
+        }
+      } catch (err) {
+        alert('Save failed: ' + err.message);
       }
     }
 
