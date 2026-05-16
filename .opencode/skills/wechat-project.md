@@ -71,35 +71,28 @@ ssh jeffrey@mp1.woojar.com 'cd /var/www/mp/wechat-backend && npm test'
 cd /home/jeffrey/workspace/mp && git add -A && git commit -m "type: Message" && git push origin main && ssh jeffrey@mp1.woojar.com 'cd /var/www/mp/wechat-backend && git pull origin main && npm install --production && pm2 restart server'
 ```
 
-## Testing Guidelines
+## Testing Guidelines (ALWAYS RUN BEFORE DEPLOY!)
 
 ### Backend Tests (wechat-backend/)
-
-**Location:** `__tests__/`
-- `orders.test.js` - Orders, payment, auth (13 tests)
-- `admin-api.test.js` - Admin products, categories (8 tests)
-- `auth.test.js` - Authentication (4 tests)
-- `database.test.js` - Database operations (11 tests)
-- `utils.test.js` - Utility functions (18 tests)
-
-**Run:**
 ```bash
 cd wechat-backend && npm test
 ```
+- 59 tests covering orders, payment, auth, admin API, database
 
 ### Frontend Tests (wechat-front/)
-
-**Location:** `__tests__/utils.test.js`
-- i18n Utils (7 tests)
-- Payment Flow (15 tests)
-- Checkout Flow (4 tests)
-- Favorites Management (3 tests)
-- Search Functionality (4 tests)
-
-**Run:**
 ```bash
 cd wechat-front && npm test
 ```
+- 40 tests covering i18n, payment flow, checkout, to-pay page, search
+
+### Test Coverage
+- **i18n Utils** - Language switching, translations
+- **Payment Flow** - Cart calculations, order totals, validation
+- **Checkout Flow** - Order submission, payment handling
+- **to-pay Page** - Order data parsing, payment params, payment status
+- **Search Functionality** - Filter, sort, pagination
+
+**IMPORTANT: All tests must pass before deploying!**
 
 ## Important Rules
 
