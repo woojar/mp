@@ -225,13 +225,21 @@ function execOne(sql, params = []) {
 function run(sql, params = []) {
   try {
     db.run(sql, params);
-    saveDatabase();
-    const result = db.exec('SELECT last_insert_rowid()');
-    if (result && result.length > 0 && result[0].values.length > 0) {
-      return { lastInsertRowid: result[0].values[0][0] };
+    
+    // Get last insert rowid using a different method
+    const rowidResult = db.exec('SELECT last_insert_rowid()');
+    let lastId = null;
+    
+    if (rowidResult && rowidResult.length > 0 && rowidResult[0].values.length > 0) {
+      lastId = rowidResult[0].values[0][0];
+      console.log('run() success, lastId:', lastId);
+    } else {
+      console.error('run() warning: could not get last_insert_rowid, SQL:', sql);
     }
-    console.error('run() error: could not get last insert rowid');
-    return null;
+    
+    saveDatabase();
+    
+    return { lastInsertRowid: lastId };
   } catch (err) {
     console.error('run() error:', err.message, 'SQL:', sql);
     throw err;
@@ -248,16 +256,23 @@ const userOps = {
   create(openid, userInfo = {}) {
     try {
       console.log('Creating user with openid:', openid);
-      const result = run('INSERT INTO users (openid, nickname, avatar, phone) VALUES (?, ?, ?, ?)', [openid, userInfo.nickname || '', userInfo.avatar || '', userInfo.phone || '']);
-      if (!result || !result.lastInsertRowid) {
-        console.error('Failed to insert user: no rowid returned');
-        return null;
-      }
-      const user = this.findById(result.lastInsertRowid);
+      const nickname = userInfo.nickname || '';
+      const avatar = userInfo.avatarUrl || userInfo.avatar || '';
+      const phone = userInfo.phone || '';
+      
+      console.log('User data:', { openid, nickname, avatar, phone });
+      
+      // Insert user
+      db.run('INSERT INTO users (openid, nickname, avatar, phone) VALUES (?, ?, ?, ?)', [openid, nickname, avatar, phone]);
+      saveDatabase();
+      
+      // Get user directly by openid (more reliable than lastInsertRowid)
+      const user = this.findByOpenid(openid);
       console.log('Created user:', user);
       return user;
     } catch (err) {
       console.error('Error creating user:', err.message);
+      console.error('Stack:', err.stack);
       return null;
     }
   },
