@@ -205,9 +205,19 @@ function execOne(sql, params = []) {
 }
 
 function run(sql, params = []) {
-  db.run(sql, params);
-  saveDatabase();
-  return { lastInsertRowid: db.exec('SELECT last_insert_rowid()')[0].values[0][0] };
+  try {
+    db.run(sql, params);
+    saveDatabase();
+    const result = db.exec('SELECT last_insert_rowid()');
+    if (result && result.length > 0 && result[0].values.length > 0) {
+      return { lastInsertRowid: result[0].values[0][0] };
+    }
+    console.error('run() error: could not get last insert rowid');
+    return null;
+  } catch (err) {
+    console.error('run() error:', err.message, 'SQL:', sql);
+    throw err;
+  }
 }
 
 const userOps = {
@@ -218,8 +228,20 @@ const userOps = {
     return execOne('SELECT id, openid, nickname, avatar, phone, language, created_at FROM users WHERE id = ?', [id]);
   },
   create(openid, userInfo = {}) {
-    const result = run('INSERT INTO users (openid, nickname, avatar, phone) VALUES (?, ?, ?, ?)', [openid, userInfo.nickname || '', userInfo.avatar || '', userInfo.phone || '']);
-    return this.findById(result.lastInsertRowid);
+    try {
+      console.log('Creating user with openid:', openid);
+      const result = run('INSERT INTO users (openid, nickname, avatar, phone) VALUES (?, ?, ?, ?)', [openid, userInfo.nickname || '', userInfo.avatar || '', userInfo.phone || '']);
+      if (!result || !result.lastInsertRowid) {
+        console.error('Failed to insert user: no rowid returned');
+        return null;
+      }
+      const user = this.findById(result.lastInsertRowid);
+      console.log('Created user:', user);
+      return user;
+    } catch (err) {
+      console.error('Error creating user:', err.message);
+      return null;
+    }
   },
   update(id, data) {
     const fields = [];
