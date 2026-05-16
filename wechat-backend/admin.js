@@ -1041,7 +1041,17 @@ let editingProductId = null;
           body: formData
         });
         
-        const result = await res.json();
+        const text = await res.text();
+        console.log('Upload response status:', res.status, 'body:', text);
+        
+        let result;
+        try {
+          result = JSON.parse(text);
+        } catch (e) {
+          console.error('Invalid JSON response:', text.substring(0, 200));
+          document.getElementById('upload-status').textContent = 'Upload failed: Server error (check console)';
+          return null;
+        }
         
         if (result.code === 0) {
           document.getElementById('upload-status').textContent = 'Done!';
@@ -1052,6 +1062,7 @@ let editingProductId = null;
           return null;
         }
       } catch (err) {
+        console.error('Upload error:', err);
         document.getElementById('upload-status').textContent = 'Upload failed: ' + err.message;
         return null;
       }

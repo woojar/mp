@@ -79,9 +79,21 @@ const resizeImage = async (req, res, next) => {
     next();
   } catch (err) {
     console.error('Resize error:', err.message);
-    res.status(500).json({ code: 500, message: 'Image processing failed: ' + err.message });
+    next(err);
   }
 };
+
+// Error handling middleware for file uploads
+app.use((err, req, res, next) => {
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ code: 400, message: 'File too large' });
+  }
+  if (err.message && err.message.includes('image')) {
+    return res.status(400).json({ code: 400, message: err.message });
+  }
+  console.error('Upload error:', err.message);
+  res.status(500).json({ code: 500, message: 'Upload failed: ' + err.message });
+});
 
 function generateToken(user) {
   return jwt.sign({ id: user.id, openid: user.openid }, JWT_SECRET, { expiresIn: '30d' });
@@ -480,6 +492,15 @@ async function startServer() {
     adminOrderOps,
     adminProductOps
   }, upload, resizeImage);
+
+  // Global error handler
+  app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ code: 400, message: 'File too large' });
+    }
+    res.status(500).json({ code: 500, message: 'Server error: ' + err.message });
+  });
 
   app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
