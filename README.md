@@ -6,90 +6,219 @@ A complete e-commerce solution with WeChat mini program frontend and Node.js bac
 
 ```
 mp/
-├── run-tests.sh              # Test runner script
+├── config.js                      # Environment-specific config
+├── run-tests.sh                   # Test runner script
+├── DEPLOYMENT.md                  # Deployment guide
 │
-├── wechat-backend/           # REST API Server
-│   ├── README.md             # Backend documentation
-│   ├── server.js             # Express server
-│   ├── admin.js              # Admin dashboard & API
-│   ├── database.js           # SQLite operations
-│   └── __tests__/            # Test files (46 tests)
+├── wechat-backend/                # REST API Server
+│   ├── config.js                 # Backend config
+│   ├── server.js                 # Express server
+│   ├── admin.js                  # Admin dashboard & API
+│   ├── database.js               # SQLite operations
+│   └── __tests__/                # Backend tests (46 tests)
 │
-└── wechat-front/             # WeChat Mini Program
-    ├── app.js                # App entry
-    ├── app.json              # App config
-    ├── pages/                # 11 pages
-    └── utils/                # Utilities (i18n)
+└── wechat-front/                 # WeChat Mini Program
+    ├── config.js                 # Frontend config
+    ├── app.js                   # App entry
+    ├── app.json                 # App config
+    ├── pages/                   # 12 pages
+    └── utils/                   # Utilities (i18n)
 ```
 
-## Quick Start
+---
 
-### Backend
+## Development Setup
 
+### Prerequisites
+
+#### 1. WeChat Mini Program DevTools
+- Download from: https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html
+- Supported OS: Windows (64/32 bit) or macOS
+- Requires WeChat account registered as **developer**
+
+#### 2. Node.js
+- Version 18+ recommended
+- Install from: https://nodejs.org/
+
+#### 3. Git
+- For version control and cloning the project
+
+### Getting Started
+
+#### 1. Clone the Project
+```bash
+git clone <repository-url>
+cd mp
+```
+
+#### 2. Setup Backend
 ```bash
 cd wechat-backend
 npm install
 npm start
 ```
+Backend runs at: `http://localhost:3000`
 
-Server runs at: `http://localhost:3000`
+#### 3. Setup Frontend in WeChat DevTools
+1. Open **WeChat DevTools**
+2. Click **"+ New Project"**
+3. Select the `wechat-front` folder
+4. Enter your **AppID** (from mp.weixin.qq.com)
+5. Select **"Default"** as project template
+6. Click **"Create"**
 
-**Admin Panel**: `http://localhost:3000/admin`  
-Login: `admin` / `admin123`
+#### 4. Configure Dev Environment
+Edit `wechat-front/config.js`:
+```javascript
+module.exports = {
+  development: {
+    apiBase: 'http://localhost:3030/api',  // Your local backend
+    appId: 'YOUR_DEV_APPID',
+    env: 'dev'
+  },
+  ...
+};
+```
 
-### Frontend
+#### 5. Enable Local Debugging
+1. In DevTools, go to **Settings → Extensions**
+2. Enable **"Local Debugging"** (for localhost access)
+3. Or use **HTTPS** with ngrok:
+```bash
+ngrok http 3000
+# Update config.js with ngrok URL
+```
 
-Import project into WeChat DevTools and run.
+---
+
+## Production Deployment
+
+### Backend Deployment (VPS)
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for full deployment guide.
+
+**Quick Deploy:**
+```bash
+# From project root
+./deploy.sh
+```
+
+### Frontend Deployment
+
+1. Go to **mp.weixin.qq.com**
+2. Navigate to **管理 → 版本管理**
+3. Click **"Upload"** in DevTools
+4. Submit for review (if first time or major changes)
+
+---
 
 ## Features
 
 ### Backend
 - RESTful API for products, orders, cart, favorites
-- Admin dashboard (products, categories, orders, banners management)
+- Admin dashboard (products, categories, orders, banners)
 - JWT authentication
 - SQLite database with seed data
+- Image upload with automatic resizing
 
 ### Frontend
-- Home page with categories & product list
-- Product detail with images & description
-- Shopping cart with quantity management
-- Checkout & order creation
-- User profile with order history
-- Address management
-- Favorites
-- Product search
-- Multi-language support (EN/ZH)
+| Page | Description |
+|------|-------------|
+| Home | Categories & product list with banners |
+| Product | Detail page with images & description |
+| Cart | Shopping cart with quantity management |
+| Checkout | Address selection & order review |
+| To-Pay | Order payment flow |
+| Orders | Order history & status tracking |
+| Order Detail | Single order view with actions |
+| User | Profile with settings |
+| Favorites | Saved products |
+| Address | Address book management |
+| Search | Product search functionality |
 
-## API Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `/api/products` | Products list with pagination |
-| `/api/categories` | Categories list |
-| `/api/cart` | Cart management |
-| `/api/orders` | Order CRUD |
-| `/api/addresses` | Address book |
-| `/api/favorites` | Favorites |
-| `/api/admin/*` | Admin APIs |
-| `/admin` | Admin dashboard (HTML) |
+---
 
 ## Testing
 
 ```bash
-# Run all tests (46 tests)
+# Run all tests
 ./run-tests.sh
 
-# With coverage
-./run-tests.sh --coverage
-
-# From backend directory
+# Backend only
 cd wechat-backend && npm test
+
+# Frontend only
+cd wechat-front && npm test
 ```
 
-## Documentation
+---
 
-- [Backend README](wechat-backend/README.md) - Detailed backend docs
-- [Testing README](wechat-backend/__tests__/README.md) - Test documentation
+## Configuration Reference
+
+### Frontend Config (`wechat-front/config.js`)
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `apiBase` | Backend API URL | Yes |
+| `appId` | Mini Program AppID | Yes |
+
+### Backend Config (`wechat-backend/config.js`)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `port` | Server port | 3000 |
+| `jwtSecret` | JWT signing secret | (dev only) |
+| `upload.maxSize` | Max upload size | 50MB |
+| `image.maxWidth` | Max image width | 1920px |
+
+### Environment Variables
+
+> **⚠️ Security Warning:** Set these in production to prevent unauthorized access
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `PORT` | Server port | No |
+| `JWT_SECRET` | JWT signing secret (min 32 chars) | **Yes** |
+| `ADMIN_USERNAME` | Admin panel username | No (default: admin) |
+| `ADMIN_PASSWORD` | Admin panel password | **Yes** |
+
+### Admin Panel
+
+**First startup generates credentials:**
+```bash
+# If ADMIN_PASSWORD is not set, a random password is generated
+# Check server logs for the generated password
+
+# Set credentials explicitly:
+export ADMIN_USERNAME=myadmin
+export ADMIN_PASSWORD=your-secure-password
+export JWT_SECRET=your-jwt-secret-min-32-chars
+
+npm start
+```
+
+---
+
+## Common Tasks
+
+### Add New Product
+1. Login to admin panel: `http://localhost:3000/admin`
+2. Use credentials set via `ADMIN_USERNAME` and `ADMIN_PASSWORD`
+3. Navigate to **Products** → **Add New**
+
+### Reset Database
+```bash
+cd wechat-backend
+rm store.db
+npm start  # Reinitializes with seed data, generates new admin credentials
+```
+
+### Check Server Logs
+```bash
+pm2 logs server
+```
+
+---
 
 ## Tech Stack
 
@@ -101,12 +230,15 @@ cd wechat-backend && npm test
 | Auth | JWT |
 | Testing | Jest, Supertest |
 
-## Default Data
+---
 
-- **Admin**: `admin` / `admin123`
-- **Categories**: Food, Drinks, Daily Use, Snacks
-- **Products**: 6 sample products
-- **Banners**: 2 sample banners
+## Support
+
+- Backend README: [wechat-backend/README.md](wechat-backend/README.md)
+- Test docs: [wechat-backend/__tests__/README.md](wechat-backend/__tests__/README.md)
+- WeChat Docs: https://developers.weixin.qq.com/miniprogram/dev/
+
+---
 
 ## License
 

@@ -5,7 +5,6 @@
 A full-stack WeChat Mini Program e-commerce application with:
 - **Frontend**: WeChat Mini Program (wechat-front/)
 - **Backend**: Node.js + Express + SQLite (wechat-backend/)
-- **VPS**: Deployed at mp1.woojar.com
 
 ## Development Workflow
 
@@ -17,13 +16,13 @@ A full-stack WeChat Mini Program e-commerce application with:
 
 **Backend Tests:**
 ```bash
-cd /home/jeffrey/workspace/mp/wechat-backend
+cd wechat-backend
 npm test
 ```
 
 **Frontend Tests:**
 ```bash
-cd /home/jeffrey/workspace/mp/wechat-front
+cd wechat-front
 npm test
 ```
 
@@ -31,7 +30,6 @@ npm test
 
 ### 3. Commit Changes
 ```bash
-cd /home/jeffrey/workspace/mp
 git add -A
 git commit -m "type: Description of changes"
 ```
@@ -50,25 +48,25 @@ git push origin main
 
 ### 5. Deploy to VPS
 ```bash
-ssh jeffrey@mp1.woojar.com 'cd /var/www/mp/wechat-backend && git pull origin main && npm install --production && pm2 restart server'
+ssh user@your-domain.com 'cd /var/www/mp/wechat-backend && git pull origin main && npm install --production && pm2 restart server'
 ```
 
 ### 6. Verify Deployment
 ```bash
 # Check server status
-ssh jeffrey@mp1.woojar.com 'pm2 status'
+ssh user@your-domain.com 'pm2 status'
 
 # View logs
-ssh jeffrey@mp1.woojar.com 'pm2 logs server --lines 30'
+ssh user@your-domain.com 'pm2 logs server --lines 30'
 
 # Run tests on VPS
-ssh jeffrey@mp1.woojar.com 'cd /var/www/mp/wechat-backend && npm test'
+ssh user@your-domain.com 'cd /var/www/mp/wechat-backend && npm test'
 ```
 
 ## Quick Deploy Command
 
 ```bash
-cd /home/jeffrey/workspace/mp && git add -A && git commit -m "type: Message" && git push origin main && ssh jeffrey@mp1.woojar.com 'cd /var/www/mp/wechat-backend && git pull origin main && npm install --production && pm2 restart server'
+git add -A && git commit -m "type: Message" && git push origin main && ssh user@your-domain.com 'cd /var/www/mp/wechat-backend && git pull origin main && npm install --production && pm2 restart server'
 ```
 
 ## Testing Guidelines (ALWAYS RUN BEFORE DEPLOY!)
@@ -104,10 +102,12 @@ cd wechat-front && npm test
 
 ## VPS Information
 
-- **SSH**: `jeffrey@mp1.woojar.com`
+> **Note:** Update with your actual server details
+
+- **SSH**: `user@your-domain.com`
 - **Backend Path**: `/var/www/mp/wechat-backend`
-- **Backend URL**: `https://mp1.woojar.com:3030`
-- **Admin Panel**: `https://mp1.woojar.com:3030/admin`
+- **Backend URL**: `https://your-domain.com:3030`
+- **Admin Panel**: `https://your-domain.com:3030/admin`
 - **Process Manager**: PM2 (`pm2 restart server`)
 
 ## Common Issues
@@ -118,7 +118,7 @@ cd wechat-front && npm test
 - Do NOT deploy until tests pass
 
 ### Deployment Fails
-- Check VPS logs: `ssh jeffrey@mp1.woojar.com 'pm2 logs server'`
+- Check VPS logs: `ssh user@your-domain.com 'pm2 logs server'`
 - Verify git pull succeeded
 - Check npm install completed
 - Restart: `pm2 restart server`
@@ -148,13 +148,49 @@ mp/
 │   ├── utils/             # Utilities (i18n)
 │   └── package.json
 ├── DEPLOYMENT.md          # Deployment guide
+├── config.js              # Frontend config
 └── README.md              # Project documentation
+```
+
+## Configuration
+
+### Frontend Config (wechat-front/config.js)
+```javascript
+module.exports = {
+  development: {
+    apiBase: 'http://localhost:3030/api',
+    appId: 'YOUR_DEV_APPID',
+    env: 'dev'
+  },
+  production: {
+    apiBase: 'https://your-domain.com:3030/api',
+    appId: 'YOUR_PROD_APPID',
+    env: 'prod'
+  }
+};
+```
+
+### Backend Config (wechat-backend/config.js)
+```javascript
+module.exports = {
+  port: process.env.PORT || 3000,
+  jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
+  jwtExpiresIn: '30d',
+  upload: {
+    maxSize: 50 * 1024 * 1024,
+    allowedTypes: ['jpeg', 'jpg', 'png', 'gif', 'webp']
+  },
+  image: {
+    maxWidth: 1920,
+    maxHeight: 1920
+  }
+};
 ```
 
 ## Test Coverage
 
-**Total: 93 automated tests**
+**Total: 93+ automated tests**
 - Backend: 59 tests
-- Frontend: 34 tests
+- Frontend: 34+ tests
 
 **Test before EVERY deployment!**

@@ -1,6 +1,9 @@
 const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const config = require('./config');
 
 const dbPath = path.join(__dirname, 'store.db');
 let db;
@@ -202,7 +205,17 @@ function seedData() {
 
   const admins = db.exec('SELECT COUNT(*) as count FROM admins');
   if (admins[0] && admins[0].values[0][0] === 0) {
-    db.run("INSERT INTO admins (username, password, name) VALUES ('admin', 'admin123', 'Administrator')");
+    const adminUsername = config.admin.username;
+    let adminPassword = config.admin.password;
+
+    if (!adminPassword) {
+      adminPassword = crypto.randomBytes(16).toString('hex');
+      console.log('\n🔐 Generated random admin password (save this!):', adminPassword, '\n');
+      console.log('   Set ADMIN_PASSWORD env var to use a fixed password.\n');
+    }
+
+    const hashedPassword = bcrypt.hashSync(adminPassword, 10);
+    db.run("INSERT INTO admins (username, password, name) VALUES (?, ?, 'Administrator')", [adminUsername, hashedPassword]);
   }
 }
 
@@ -543,8 +556,11 @@ const bannerOps = {
 };
 
 const adminOps = {
-  findByUsername(username, password) {
-    return execOne('SELECT * FROM admins WHERE username = ? AND password = ?', [username, password]);
+  findByUsername(username) {
+    return execOne('SELECT * FROM admins WHERE username = ?', [username]);
+  },
+  verifyPassword(plainPassword, hashedPassword) {
+    return bcrypt.compareSync(plainPassword, hashedPassword);
   }
 };
 

@@ -1,7 +1,9 @@
 const path = require('path');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const config = require('./config');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'wechat-store-secret-key-2024';
+const JWT_SECRET = config.jwtSecret;
 
 function adminRouter(app, database, authenticate, {
   categoryOps,
@@ -52,8 +54,8 @@ function adminRouter(app, database, authenticate, {
     if (!username || !password) {
       return res.json({ code: 400, message: 'Username and password required' });
     }
-    const admin = adminOps.findByUsername(username, password);
-    if (!admin) {
+    const admin = adminOps.findByUsername(username);
+    if (!admin || !adminOps.verifyPassword(password, admin.password)) {
       return res.json({ code: 401, message: 'Invalid credentials' });
     }
     const token = jwt.sign({ id: admin.id, username: admin.username, name: admin.name }, JWT_SECRET, { expiresIn: '7d' });

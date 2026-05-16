@@ -1,7 +1,12 @@
+const config = require('./config');
+const envConfig = config[wx.getAccountInfoSync ? 'production' : 'development'];
+
 App({
   globalData: {
     userInfo: null,
-    apiBase: 'https://mp1.woojar.com:3030/api'
+    apiBase: envConfig.apiBase,
+    appId: envConfig.appId,
+    env: envConfig.env
   },
   onLaunch() {
     this.checkLoginStatus();

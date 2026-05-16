@@ -26,9 +26,11 @@ const {
   adminProductOps
 } = require('./database');
 
+const config = require('./config');
+
 const app = express();
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'wechat-store-secret-key-2024';
+const PORT = config.port;
+const JWT_SECRET = config.jwtSecret;
 
 app.use(cors());
 app.use(bodyParser.json());

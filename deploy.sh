@@ -1,24 +1,25 @@
 #!/bin/bash
 
 # Deploy wechat-backend to VPS
+# Update these values for your environment
 
-VPS_HOST="mp1.woojar.com"
-VPS_USER="root"
-VPS_PATH="/var/www/wechat-backend"
+VPS_HOST="your-domain.com"
+VPS_USER="your-username"
+VPS_PATH="/var/www/mp/wechat-backend"
 
 echo "=== Deploying Backend ==="
 echo "Uploading files to VPS..."
-scp -r /home/jeffrey/workspace/mp/wechat-backend/* ${VPS_USER}@${VPS_HOST}:${VPS_PATH}/
+scp -r ./wechat-backend/* ${VPS_USER}@${VPS_HOST}:${VPS_PATH}/
 
 echo "Installing dependencies on VPS..."
 ssh ${VPS_USER}@${VPS_HOST} << 'ENDSSH'
-cd /var/www/wechat-backend
+cd ${VPS_PATH}
 npm install --production
-pm2 restart wechat-backend || pm2 start server.js --name wechat-backend
+pm2 restart server || pm2 start server.js --name server
 pm2 save
 
 # Setup nginx if config exists
-if [ -f /etc/nginx/sites-available/wechat ]; then
+if [ -f /etc/nginx/sites-available/mp-backend ]; then
     nginx -t && systemctl reload nginx
 fi
 ENDSSH
