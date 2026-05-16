@@ -109,15 +109,23 @@ Page({
           icon: 'success',
           duration: 1500
         });
+
+        const orderData = res.data.data;
         
-        // Navigate back to user page after delay
+        // Store order data temporarily for to-pay page
+        wx.setStorageSync('pendingOrder', {
+          id: orderData.id,
+          order_no: orderData.order_no,
+          totalPrice: orderData.total_price || orderData.totalPrice,
+          actual_price: orderData.actual_price || orderData.actualPrice,
+          items: orderData.items || this.data.items,
+          address: this.data.address
+        });
+        
+        // Navigate to to-pay page
         setTimeout(() => {
-          wx.switchTab({ 
-            url: '/pages/user/user',
-            fail: (err) => {
-              console.log('switchTab failed, trying navigateBack:', err);
-              wx.navigateBack({ delta: 1, fail: () => wx.redirectTo({ url: '/pages/user/user' }) });
-            }
+          wx.redirectTo({
+            url: `/pages/to-pay/to-pay?orderId=${orderData.id}`
           });
         }, 1600);
       } else {

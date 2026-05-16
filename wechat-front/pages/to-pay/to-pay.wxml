@@ -1,0 +1,51 @@
+<view class="container">
+  <view class="header">
+    <text class="title">Order Created</text>
+    <text class="subtitle">Order #{{orderNo}}</text>
+  </view>
+
+  <view class="order-info">
+    <view class="info-row">
+      <text class="label">Total Amount:</text>
+      <text class="value price">¥{{totalPrice}}</text>
+    </view>
+    <view class="info-row">
+      <text class="label">Status:</text>
+      <text class="value status pending">Pending Payment</text>
+    </view>
+  </view>
+
+  <view class="items-section">
+    <text class="section-title">Order Items</text>
+    <view class="item" wx:for="{{items}}" wx:key="id">
+      <view class="item-info">
+        <text class="item-name">{{item.name}}</text>
+        <text class="item-price">¥{{item.price}} x {{item.quantity}}</text>
+      </view>
+      <text class="item-subtotal">¥{{item.subtotal}}</text>
+    </view>
+  </view>
+
+  <view class="address-section">
+    <text class="section-title">Shipping Address</text>
+    <view class="address-card">
+      <text class="address-name">{{address.name}} {{address.phone}}</text>
+      <text class="address-detail">{{address.province}}{{address.city}}{{address.district}}{{address.detail}}</text>
+    </view>
+  </view>
+
+  <view class="payment-section">
+    <text class="section-title">Payment Method</text>
+    <view class="payment-method">
+      <text class="method-name">WeChat Pay</text>
+      <text class="method-icon">💚</text>
+    </view>
+  </view>
+
+  <view class="actions">
+    <button class="pay-btn" bindtap="onPayNow">Pay Now</button>
+    <button class="cancel-btn" bindtap="onCancel">Cancel Order</button>
+  </view>
+
+  <view class="loading" wx:if="{{loading}}">Processing...</view>
+</view>
