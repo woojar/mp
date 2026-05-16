@@ -3,6 +3,10 @@ node_modules/
 *.log
 npm-debug.log*
 
-# WeChat backend
+# Environment variables (local secrets)
+wechat-backend/.env.local
+wechat-front/config.local.js
+
+# Database
 wechat-backend/*.db
 wechat-backend/*.db-**.tar.gz

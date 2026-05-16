@@ -153,7 +153,21 @@ cd wechat-front && npm test
 
 ---
 
-## Configuration Reference
+## Configuration
+
+### Local Development Setup
+
+Copy example files for local development:
+
+```bash
+# Backend environment
+cp wechat-backend/.env.example wechat-backend/.env.local
+
+# Frontend config
+cp wechat-front/config.example.js wechat-front/config.local.js
+```
+
+### Backend Environment Variables
 
 ### Frontend Config (`wechat-front/config.js`)
 

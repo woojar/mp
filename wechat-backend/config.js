@@ -1,3 +1,5 @@
+require('dotenv').config({ path: require('path').resolve(__dirname, '.env.local') });
+
 module.exports = {
   port: process.env.PORT || 3000,
 
