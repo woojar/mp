@@ -20,6 +20,10 @@
       </view>
       <view class="order-footer">
         <text class="total-price">{{t.total}}: ¥{{item.totalPrice}}</text>
+        <view class="order-actions">
+          <button wx:if="{{item.status === 'pending'}}" class="pay-btn" bindtap="onPay" data-id="{{item.id}}">Pay Now</button>
+          <button wx:if="{{item.status === 'paid'}}" class="confirm-btn" bindtap="onConfirm" data-id="{{item.id}}">Confirm Receipt</button>
+        </view>
       </view>
     </view>
   </view>

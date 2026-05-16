@@ -25,12 +25,7 @@ Page({
     this.setData({ loading: true });
     
     const token = wx.getStorageSync('token');
-    console.log('=== ORDERS DEBUG ===');
-    console.log('Token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NOT FOUND');
-    console.log('API Base:', app.globalData.apiBase);
-    
     if (!token) {
-      console.log('No token, showing empty orders');
       this.setData({ orders: [], loading: false });
       return;
     }
@@ -67,5 +62,90 @@ Page({
         this.setData({ loading: false });
       }
     });
+  },
+
+  onPay(e) {
+    const orderId = e.currentTarget.dataset.id;
+    const token = wx.getStorageSync('token');
+    
+    wx.showModal({
+      title: 'Confirm Payment',
+      content: 'Pay for this order?',
+      success: (res) => {
+        if (res.confirm) {
+          wx.request({
+            url: `${app.globalData.apiBase}/orders/${orderId}/pay`,
+            method: 'POST',
+            header: {
+              'Authorization': `Bearer ${token}`
+            },
+            success: (res) => {
+              console.log('Payment response:', res);
+              if (res.data.code === 0) {
+                const payParams = res.data.data;
+                
+                // Call WeChat Pay
+                wx.requestPayment({
+                  timeStamp: payParams.timeStamp,
+                  nonceStr: payParams.nonceStr,
+                  package: payParams.package,
+                  signType: payParams.signType,
+                  paySign: payParams.paySign,
+                  success: (payRes) => {
+                    console.log('Payment success:', payRes);
+                    wx.showToast({ title: 'Payment successful', icon: 'success' });
+                    this.loadOrders();
+                  },
+                  fail: (payErr) => {
+                    console.error('Payment failed:', payErr);
+                    wx.showToast({ title: 'Payment cancelled', icon: 'none' });
+                  }
+                });
+              } else {
+                wx.showToast({ title: res.data.message || 'Payment failed', icon: 'none' });
+              }
+            },
+            fail: (err) => {
+              console.error('Payment request failed:', err);
+              wx.showToast({ title: 'Network error', icon: 'none' });
+            }
+          });
+        }
+      }
+    });
+  },
+
+  onConfirm(e) {
+    const orderId = e.currentTarget.dataset.id;
+    const token = wx.getStorageSync('token');
+    
+    wx.showModal({
+      title: 'Confirm Receipt',
+      content: 'Confirm you received the order?',
+      success: (res) => {
+        if (res.confirm) {
+          wx.request({
+            url: `${app.globalData.apiBase}/orders/${orderId}/confirm`,
+            method: 'PUT',
+            header: {
+              'Authorization': `Bearer ${token}`
+            },
+            success: (res) => {
+              if (res.data.code === 0) {
+                wx.showToast({ title: 'Order confirmed', icon: 'success' });
+                this.loadOrders();
+              } else {
+                wx.showToast({ title: res.data.message || 'Failed to confirm', icon: 'none' });
+              }
+            },
+            fail: () => {
+              wx.showToast({ title: 'Network error', icon: 'none' });
+            }
+          });
+        }
+      }
+    });
+  }
+});
   }
 });
