@@ -47,7 +47,7 @@ wechat-backend/
 ### Admin Dashboard
 Access at: `http://localhost:3000/admin`
 
-**Login**: username `admin`, password `admin123`
+**Login**: username (set via `ADMIN_USERNAME`), password (set via `ADMIN_PASSWORD` or auto-generated)
 
 | Feature | Description |
 |---------|-------------|
@@ -134,7 +134,7 @@ SQLite database (`store.db`) is auto-created on first run with seed data:
 - 4 categories (Food, Drinks, Daily Use, Snacks)
 - 6 sample products
 - 2 sample banners
-- Admin user: `admin` / `admin123`
+- Admin user: credentials set via `ADMIN_USERNAME` and `ADMIN_PASSWORD` environment variables
 
 ## Environment Variables
 

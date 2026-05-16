@@ -5,7 +5,7 @@ npm-debug.log*
 
 # Environment variables (local secrets)
 wechat-backend/.env.local
-wechat-front/config.local.js
+wechat-frontend/config.local.js
 
 # Database
 wechat-backend/*.db
