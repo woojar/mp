@@ -47,6 +47,25 @@ cd /home/jeffrey/workspace/mp && git add -A && git commit -m "fix: Update" && gi
 
 ## Common Tasks
 
+### Run Tests
+
+**Backend Tests:**
+```bash
+cd /home/jeffrey/workspace/mp/wechat-backend
+npm test
+```
+
+**Frontend Tests:**
+```bash
+cd /home/jeffrey/workspace/mp/wechat-front
+npm test
+```
+
+**Run Tests on VPS:**
+```bash
+ssh jeffrey@mp1.woojar.com 'cd /var/www/mp/wechat-backend && npm test'
+```
+
 ### Check Server Status
 ```bash
 ssh jeffrey@mp1.woojar.com 'pm2 status'
