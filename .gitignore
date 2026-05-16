@@ -5,4 +5,4 @@ npm-debug.log*
 
 # WeChat backend
 wechat-backend/*.db
-wechat-backend/*.db-*
+wechat-backend/*.db-**.tar.gz
