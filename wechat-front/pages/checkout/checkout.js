@@ -104,10 +104,22 @@ Page({
         wx.removeStorageSync('cart');
         wx.removeStorageSync('checkoutItems');
         
-        wx.showToast({ title: this.data.t.orderPlaced, icon: 'success' });
+        wx.showToast({ 
+          title: this.data.t.orderPlaced || 'Order placed', 
+          icon: 'success',
+          duration: 1500
+        });
+        
+        // Navigate back to user page after delay
         setTimeout(() => {
-          wx.switchTab({ url: '/pages/user/user' });
-        }, 1500);
+          wx.switchTab({ 
+            url: '/pages/user/user',
+            fail: (err) => {
+              console.log('switchTab failed, trying navigateBack:', err);
+              wx.navigateBack({ delta: 1, fail: () => wx.redirectTo({ url: '/pages/user/user' }) });
+            }
+          });
+        }, 1600);
       } else {
         wx.showToast({ title: res.data.message || 'Order failed', icon: 'none' });
       }
