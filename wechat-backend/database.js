@@ -6,12 +6,21 @@ const dbPath = path.join(__dirname, 'store.db');
 let db;
 
 async function initializeDatabase() {
+  console.log('Initializing database...');
   const SQL = await initSqlJs();
   
   if (fs.existsSync(dbPath)) {
-    const fileBuffer = fs.readFileSync(dbPath);
-    db = new SQL.Database(fileBuffer);
+    console.log('Loading existing database from:', dbPath);
+    try {
+      const fileBuffer = fs.readFileSync(dbPath);
+      db = new SQL.Database(fileBuffer);
+      console.log('Database loaded successfully');
+    } catch (err) {
+      console.error('Failed to load database, creating new one:', err.message);
+      db = new SQL.Database();
+    }
   } else {
+    console.log('Creating new database');
     db = new SQL.Database();
   }
 
@@ -151,9 +160,18 @@ async function initializeDatabase() {
 }
 
 function saveDatabase() {
-  const data = db.export();
-  const buffer = Buffer.from(data);
-  fs.writeFileSync(dbPath, buffer);
+  try {
+    if (!db) {
+      console.error('saveDatabase error: db is not initialized');
+      return;
+    }
+    const data = db.export();
+    const buffer = Buffer.from(data);
+    fs.writeFileSync(dbPath, buffer);
+  } catch (err) {
+    console.error('saveDatabase error:', err.message);
+    throw err;
+  }
 }
 
 function seedData() {

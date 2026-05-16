@@ -163,7 +163,8 @@ async function startServer() {
         }
       }));
     } catch (err) {
-      console.error('Login error:', err.message, err.stack);
+      console.error('Login error:', err.message);
+      console.error('Stack:', err.stack);
       res.json(error(500, 'Login failed: ' + err.message));
     }
   });
