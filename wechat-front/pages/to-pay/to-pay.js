@@ -116,7 +116,7 @@ Page({
               this.setData({ status: 'paid' });
               
               setTimeout(() => {
-                wx.switchTab({ url: '/pages/orders/orders' });
+                wx.redirectTo({ url: '/pages/orders/orders' });
               }, 1500);
             },
             fail: (payErr) => {
@@ -168,7 +168,7 @@ Page({
         if (res.data.code === 0) {
           wx.showToast({ title: 'Order cancelled', icon: 'success' });
           setTimeout(() => {
-            wx.switchTab({ url: '/pages/user/user' });
+            wx.redirectTo({ url: '/pages/user/user' });
           }, 1500);
         } else {
           wx.showToast({ title: res.data.message || 'Failed to cancel', icon: 'none' });
