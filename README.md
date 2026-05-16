@@ -17,7 +17,7 @@ mp/
 │   ├── database.js               # SQLite operations
 │   └── __tests__/                # Backend tests (46 tests)
 │
-└── wechat-front/                 # WeChat Mini Program
+└── wechat-frontend/                 # WeChat Mini Program
     ├── config.js                 # Frontend config
     ├── app.js                   # App entry
     ├── app.json                 # App config
@@ -62,13 +62,13 @@ Backend runs at: `http://localhost:3000`
 #### 3. Setup Frontend in WeChat DevTools
 1. Open **WeChat DevTools**
 2. Click **"+ New Project"**
-3. Select the `wechat-front` folder
+3. Select the `wechat-frontend` folder
 4. Enter your **AppID** (from mp.weixin.qq.com)
 5. Select **"Default"** as project template
 6. Click **"Create"**
 
 #### 4. Configure Dev Environment
-Edit `wechat-front/config.js`:
+Edit `wechat-frontend/config.js`:
 ```javascript
 module.exports = {
   development: {
@@ -148,7 +148,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for full deployment guide.
 cd wechat-backend && npm test
 
 # Frontend only
-cd wechat-front && npm test
+cd wechat-frontend && npm test
 ```
 
 ---
@@ -164,12 +164,12 @@ Copy example files for local development:
 cp wechat-backend/.env.example wechat-backend/.env.local
 
 # Frontend config
-cp wechat-front/config.example.js wechat-front/config.local.js
+cp wechat-frontend/config.example.js wechat-frontend/config.local.js
 ```
 
 ### Backend Environment Variables
 
-### Frontend Config (`wechat-front/config.js`)
+### Frontend Config (`wechat-frontend/config.js`)
 
 | Variable | Description | Required |
 |----------|-------------|----------|

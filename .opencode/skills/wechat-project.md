@@ -3,7 +3,7 @@
 ## Project Overview
 
 A full-stack WeChat Mini Program e-commerce application with:
-- **Frontend**: WeChat Mini Program (wechat-front/)
+- **Frontend**: WeChat Mini Program (wechat-frontend/)
 - **Backend**: Node.js + Express + SQLite (wechat-backend/)
 
 ## Development Workflow
@@ -22,7 +22,7 @@ npm test
 
 **Frontend Tests:**
 ```bash
-cd wechat-front
+cd wechat-frontend
 npm test
 ```
 
@@ -77,9 +77,9 @@ cd wechat-backend && npm test
 ```
 - 59 tests covering orders, payment, auth, admin API, database
 
-### Frontend Tests (wechat-front/)
+### Frontend Tests (wechat-frontend/)
 ```bash
-cd wechat-front && npm test
+cd wechat-frontend && npm test
 ```
 - 40 tests covering i18n, payment flow, checkout, to-pay page, search
 
@@ -142,7 +142,7 @@ mp/
 │   ├── database.js         # Database operations
 │   ├── admin.js            # Admin panel
 │   └── package.json
-├── wechat-front/           # WeChat Mini Program
+├── wechat-frontend/           # WeChat Mini Program
 │   ├── __tests__/         # Frontend tests (34 tests)
 │   ├── pages/             # Mini program pages
 │   ├── utils/             # Utilities (i18n)
@@ -154,7 +154,7 @@ mp/
 
 ## Configuration
 
-### Frontend Config (wechat-front/config.js)
+### Frontend Config (wechat-frontend/config.js)
 ```javascript
 module.exports = {
   development: {

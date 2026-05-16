@@ -23,7 +23,7 @@ This guide covers deploying the WeChat Mini Program backend to a VPS.
 
 ### 1. Update Config Files
 
-**Frontend Config** (`wechat-front/config.js`):
+**Frontend Config** (`wechat-frontend/config.js`):
 ```javascript
 production: {
   apiBase: 'https://your-domain.com:3030/api',

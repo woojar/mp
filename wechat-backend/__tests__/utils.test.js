@@ -9,7 +9,7 @@ global.wx = {
   })
 };
 
-const { t, setLanguage, getLanguage, getTranslations } = require('../../wechat-front/utils/i18n');
+const { t, setLanguage, getLanguage, getTranslations } = require('../../wechat-frontend/utils/i18n');
 
 describe('i18n Utils', () => {
   beforeEach(() => {
