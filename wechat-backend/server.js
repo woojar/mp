@@ -356,38 +356,53 @@ async function startServer() {
   });
 
   app.post('/api/orders', authenticate, (req, res) => {
+    console.log('=== ORDER CREATION ===');
+    console.log('User ID:', req.user.id);
+    console.log('Request body:', req.body);
+    
     const { items, totalPrice, discountPrice = 0, actualPrice, addressId, address, remark, clearCart = true } = req.body;
     
     if (!items || items.length === 0) {
+      console.log('Order failed: items required');
       return res.json(error(400, 'Items are required'));
     }
     
     if (!actualPrice) {
+      console.log('Order failed: actual price required');
       return res.json(error(400, 'Actual price is required'));
     }
     
     for (const item of items) {
       const product = productOps.findById(item.productId);
       if (!product) {
+        console.log('Order failed: product not found', item.productId);
         return res.json(error(404, `Product ${item.productId} not found`));
       }
       if (product.stock < item.quantity) {
+        console.log('Order failed: insufficient stock', product.name);
         return res.json(error(400, `Insufficient stock for ${product.name}`));
       }
     }
     
-    const order = orderOps.create(req.user.id, {
-      items,
-      totalPrice,
-      discountPrice,
-      actualPrice,
-      addressId,
-      address,
-      remark,
-      clearCart
-    });
-    
-    res.json(success(order));
+    try {
+      console.log('Creating order...');
+      const order = orderOps.create(req.user.id, {
+        items,
+        totalPrice,
+        discountPrice,
+        actualPrice,
+        addressId,
+        address,
+        remark,
+        clearCart
+      });
+      
+      console.log('Order created:', order);
+      res.json(success(order));
+    } catch (err) {
+      console.error('Order creation error:', err.message, err.stack);
+      res.status(500).json(error(500, 'Order failed: ' + err.message));
+    }
   });
 
   app.get('/api/orders', authenticate, (req, res) => {

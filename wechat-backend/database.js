@@ -412,6 +412,8 @@ const cartOps = {
 
 const orderOps = {
   create(userId, orderData) {
+    console.log('orderOps.create called with:', { userId, orderData });
+    
     const orderNo = 'ORD' + Date.now() + Math.random().toString(36).substr(2, 6).toUpperCase();
     
     const result = run(`
@@ -425,17 +427,38 @@ const orderOps = {
       orderData.actualPrice,
       'pending',
       orderData.addressId || null,
-      orderData.address || '',
+      typeof orderData.address === 'string' ? orderData.address : JSON.stringify(orderData.address || ''),
       orderData.remark || ''
     ]);
     
-    const orderId = result.lastInsertRowid;
+    console.log('Order inserted, orderId:', result?.lastInsertRowid);
+    
+    const orderId = result?.lastInsertRowid;
+    if (!orderId) {
+      console.error('Failed to get order ID after insert');
+      return null;
+    }
     
     for (const item of orderData.items) {
+      // Get product details if not provided
+      let productName = item.name;
+      let productImage = item.image;
+      
+      if (!productName || !productImage) {
+        const product = productOps.findById(item.productId);
+        if (product) {
+          productName = product.name;
+          productImage = product.image;
+        }
+      }
+      
+      console.log('Inserting order item:', { orderId, productId: item.productId, name: productName });
+      
       run(`
         INSERT INTO order_items (order_id, product_id, product_name, product_image, price, quantity, subtotal)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [orderId, item.productId, item.name, item.image, item.price, item.quantity, item.price * item.quantity]);
+      `, [orderId, item.productId, productName || 'Unknown', productImage || '', item.price, item.quantity, item.price * item.quantity]);
+      
       productOps.updateStock(item.productId, item.quantity);
     }
     
@@ -443,7 +466,9 @@ const orderOps = {
       cartOps.clear(userId);
     }
     
-    return this.findById(orderId, userId);
+    const order = this.findById(orderId, userId);
+    console.log('Order created successfully:', order);
+    return order;
   },
   
   findByUser(userId, { page = 1, limit = 10, status } = {}) {
